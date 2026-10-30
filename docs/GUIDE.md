@@ -22,10 +22,13 @@ This covers every feature and every setting, with a quick way to try each one. T
 
 1. Download ClipVault from [Releases](https://github.com/arpan2711/clipvault-public/releases/latest) and run it.
    - If Windows SmartScreen says *"Windows protected your PC"*, click **More info → Run anyway**. ClipVault isn't code-signed yet; see the README.
-2. The ClipVault window opens. Closing it doesn't quit: ClipVault keeps running in the **tray** (the icons by the clock).
+2. The first time, ClipVault opens with a short **setup**: five quick questions about the death cam, when to record, notifications, the save folder and quality. Each step shows the Settings row where you can change it later. **Skip setup** (or Esc) keeps the defaults, and **Settings → Redo setup** runs it again.
+
+   ![The first-run setup](images/collage-setup.jpg)
+3. The ClipVault window opens. Closing it doesn't quit: ClipVault keeps running in the **tray** (the icons by the clock).
    - Click the tray icon to open the window again.
    - Right-click it for the menu: *Save last 30 s*, *Start recording*, *Bookmark this moment*, *Replay buffer* on/off, *Open clips folder*, *Report a bug…*, *Quit ClipVault*.
-3. Look at the status at the top of the window. **Replay buffer on · Keeping the last 30 s · <your encoder>** means it's ready.
+4. Look at the status at the top of the window. **Replay buffer on · Keeping the last 30 s · <your encoder>** means it's ready.
 
 ![The status, Record and Save clip buttons](images/buffer-status-bar.png)
 
@@ -233,7 +236,8 @@ Click a match to open its page.
   - The timeline below has an icon for each moment; click one to jump there.
   - **Highlight mode** plays only the highlights and skips the time between them. You pick which kinds: Kills, Assists, Deaths, Objectives.
   - The **Moments** list on the right switches between *My moments* and *All kills* (every kill of the match: ally rows blue, enemy rows red).
-  - The **minimap** plays in sync, picture-in-picture.
+  - The **minimap** plays in sync, picture-in-picture, top right of the video. It's recorded for the whole match even when the game itself isn't, so every highlight shows where everyone was. The map button under the video hides or shows it.
+  - On a match with highlights only (no full recording), **Play match** plays the highlights with the minimap in between.
   - **Clip** opens the player at the playhead. **F** is full screen.
 - **Scoreboard tab:** all ten players (role, champion, K/D/A, damage with bars, gold, CS, vision, items), team totals and objectives, a gold-difference graph per minute, and your team's damage share.
 - **Highlights tab:** every highlight as a card, filtered by kind (Kills, Deaths, Assists, Objectives, Multikills). **Select** lets you pick some for a highlight video. A line at the bottom says how many files the match uses on disk.
@@ -262,7 +266,7 @@ When the game closes, the match page opens by itself in highlight mode, so you c
 
 ![The death cam over the game](images/deathcam-in-game.jpg)
 
-When you die in League, the death cam plays the fight back in a small window about **2 seconds later**, while the respawn timer runs.
+When you die in League, the death cam plays the fight back in a small window about **2 seconds later**, while the respawn timer runs. Over the game it sits in the top-left corner, where League's HUD is empty, with its keys in a band **under** the picture.
 - **It never takes focus from the game.** Over the game, mouse clicks go straight through it to League. On a second screen, clicking it closes it.
 - **It isn't saved in your clips.** Screen captures can't see it either.
 - After the replay ends it holds the last frame for a moment, then fades out (it stays longer when blown up).
@@ -274,7 +278,7 @@ The window's label says what it's showing: **Death cam**, **Kill cam**, or **Rep
 
 ![The key strip under the cam](images/deathcam-keystrip.png)
 
-The strip under the cam shows these keys:
+The strip in the band under the picture shows these keys, so you don't have to remember them. It never covers the replay itself:
 
 | Hotkey | What it does |
 |---|---|

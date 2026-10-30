@@ -76,7 +76,7 @@ export function openOnboarding({ api, status, step = 0, redo = false, onDone, to
         <ul class="ob-points">
           <li><b>Death cam</b><span>A few seconds after you die in League, a small replay shows how it happened, while you wait to respawn.</span></li>
           <li><b>Instant replay</b><span>Press <kbd>${esc(hk.saveClip || 'Alt+F10')}</kbd> to save the last ${esc(fmtLength(c.replaySeconds))} of any game.</span></li>
-          <li><b>League highlights</b><span>Kills, deaths and objectives are clipped by themselves, with a page for every match.</span></li>
+          <li><b>Highlights + map</b><span>Kills, deaths and objectives are clipped by themselves, and each one plays with the whole match's minimap beside it.</span></li>
         </ul>
         <p class="ob-small">Five quick questions, about a minute. You can change everything later in Settings.</p>`,
       side: `<figure class="ob-hero"><img src="${IMG}hero-deathcam.webp" alt="The death cam replaying a teamfight death in the corner of the screen" width="662" height="328" draggable="false">
