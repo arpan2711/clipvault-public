@@ -1,0 +1,4 @@
+{
+  "colourLiterals": 0,
+  "note": "Colour literals allowed outside src/renderer/css/tokens.css (renderer and overlay). It may only go down: after removing literals run node test/css-lint.js --update. Today: none; every colour, gradient and shadow is a token."
+}

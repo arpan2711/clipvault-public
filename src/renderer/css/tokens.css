@@ -1,0 +1,390 @@
+/* ClipVault design tokens, shared by the app window, the in-game overlay and the kill cam.
+   The design language is quickRS's: one material lit from the top left. Things you press are low
+   pads standing out of it; inputs, grooves and readouts are pressed in ("raised = touch, sunk =
+   read"). One cobalt accent, used as light: the LED of the current choice, the primary key, fills.
+   Manrope at 500/600/700/800 with tabular figures, tracked uppercase small-caps labels.
+   Three themes share every recipe and differ only in these tokens: Gray (the default, on :root,
+   neutral like VS Code's Dark Modern), Midnight (quickRS's navy) and Light (quickRS's Daylight),
+   chosen with <html data-theme> (Settings > General). The overlay and kill cam windows always use
+   the Gray values. Colour literals and gradients belong here and nowhere else (test/css-lint.js). */
+
+@font-face { font-family: "Manrope"; src: url("../fonts/Manrope-Medium.ttf") format("truetype"); font-weight: 400 500; font-style: normal; font-display: block; }
+@font-face { font-family: "Manrope"; src: url("../fonts/Manrope-SemiBold.ttf") format("truetype"); font-weight: 600; font-style: normal; font-display: block; }
+@font-face { font-family: "Manrope"; src: url("../fonts/Manrope-Bold.ttf") format("truetype"); font-weight: 700; font-style: normal; font-display: block; }
+@font-face { font-family: "Manrope"; src: url("../fonts/Manrope-ExtraBold.ttf") format("truetype"); font-weight: 800 900; font-style: normal; font-display: block; }
+
+/* ================================================================== Gray (default) */
+:root {
+  color-scheme: dark;
+
+  /* Neutrals. Elevation: screen < well < base < layer < pad < floating. */
+  --gray-0:   #0a0a0a;   /* video stage, letterbox */
+  --gray-50:  #181818;   /* base: title bar, sidebar, player chrome (a shade under the page) */
+  --gray-100: #1f1f1f;   /* the material: library, settings, match page */
+  --gray-150: #252526;   /* solid floating surface */
+  --gray-200: #2b2b2b;   /* pad face: hover, raised rows, buttons */
+  --gray-250: #333333;   /* pressed / selected fill */
+  --gray-300: #4a4a4a;   /* strong lines, scroll thumb hover */
+  --gray-400: #6b6b6b;   /* disabled text and icons */
+  --gray-500: #9d9d9d;   /* captions, small-caps labels, hints */
+  --gray-600: #cccccc;   /* secondary text, default icon colour */
+  --gray-700: #e8e8e8;   /* primary text */
+  --bg-well: #161616;          /* rubber dip: inputs, tracks, segmented controls, grooves */
+  --bg-screen: #111111;        /* readouts: stats, timers */
+  --bg-screen-hi: #262626;     /* played part / current bar on a screen */
+  --bg-glass: rgba(37, 37, 38, 0.8);
+  --bg-track: #0c0c0c;         /* deepest groove, unlit socket */
+  --line-subtle: rgba(255, 255, 255, 0.06);   /* row dividers */
+  --line: rgba(255, 255, 255, 0.1);           /* hairlines between cells, glass rim */
+  --line-strong: rgba(255, 255, 255, 0.17);   /* rare: wells have no borders */
+  --scrim: rgba(0, 0, 0, 0.5);                /* dialog backdrop (the page also blurs) */
+  --edge-glass: rgba(255, 255, 255, 0.09);
+
+  /* The light and shade of the material */
+  --sh: rgba(0, 0, 0, 0.45);          /* pads' soft drop */
+  --sh-deep: rgba(0, 0, 0, 0.55);     /* wells' top-lip shadow, floating drops */
+  --hi: rgba(255, 255, 255, 0.06);    /* the 1 px top light on raised things */
+  --hi-lip: rgba(255, 255, 255, 0.04);/* light catching a well's bottom lip */
+  --halo: rgba(255, 255, 255, 0.04);
+
+  --accent-text: #85b3f7;       /* accent as text, icon or outline */
+  --accent-subtle: rgba(59, 106, 197, 0.18);
+  --accent-soft: rgba(59, 106, 197, 0.12);
+
+  /* System status (quickRS hit / late / miss) */
+  --success: #5ccb86;
+  --warning: #f08a4b;
+  --danger: #f0645a;            /* text and icons */
+
+  /* League semantics (data colours, equal weight) */
+  --c-victory: #679ff1;         /* blue = win */
+  --c-defeat: #ea5c64;          /* red = loss */
+  --c-defeat-text: #ee6c73;     /* red text on --loss-tint */
+  --c-kill: #5ccb86;            /* your takedowns: kill, first blood */
+  --c-assist: #5bc1d9;
+  --c-death: #f0645a;
+  --c-highlight: #ecbd51;       /* big plays: multikill, ace, teamfight (gold) */
+  --c-objective: #b691e1;       /* epic monsters */
+  --c-structure: #a3a9b0;       /* turrets, inhibitors, full recordings, generic moments */
+  --c-bookmark: #e8a7cb;        /* your bookmarks and favorites */
+  --on-marker: #111111;         /* glyph on any marker fill */
+  --win-tint: rgba(103, 159, 241, 0.14);
+  --loss-tint: rgba(234, 92, 100, 0.14);
+
+  /* Keyboard visualiser (the user's Wooting 80HE) */
+  --kb-case: #121212;
+  --kb-key: #2b2b2b;
+  --kb-edge: #3e3e3e;
+  --kb-text: #dddddd;
+  --kb-heat: #ff7a1a;
+
+  /* The <select> arrow, in --text-2 */
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23cccccc' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+
+  /* ---------------------------------------------------------------- shared by every theme */
+
+  --bg-stage: var(--gray-0);
+  --bg-base: var(--gray-50);
+  --bg-layer: var(--gray-100);
+  --bg-surface: var(--gray-150);
+  --bg-hover: var(--gray-200);
+  --bg-selected: var(--gray-250);
+  --bg-pad: var(--gray-200);
+  --bg-float: var(--gray-150);
+  --text-1: var(--gray-700);
+  --text-2: var(--gray-600);
+  --text-3: var(--gray-500);
+  --text-disabled: var(--gray-400);
+  --line-solid: var(--gray-300);
+  --scrim-badge: rgba(8, 8, 10, 0.74);        /* badges and buttons over thumbnails and video */
+  --scrim-badge-soft: rgba(8, 8, 10, 0.6);
+  --on-scrim: #f2f2f2;                        /* text on those badges, any theme */
+  /* video player: the frame and the controls on the video (white on a dark shade, any footage,
+     any theme) */
+  --video-bg: #000;
+  --vc-shade: rgba(10, 10, 12, 0.74);
+  --vc-fg: rgba(255, 255, 255, 0.95);
+  --vc-fg-2: rgba(255, 255, 255, 0.72);
+  --vc-rail: rgba(255, 255, 255, 0.24);
+  --vc-rail-hover: rgba(255, 255, 255, 0.34);
+  --vc-btn-hover: rgba(255, 255, 255, 0.13);
+  --vc-tip-bg: rgba(30, 30, 32, 0.97);
+  --vc-outline: rgba(0, 0, 0, 0.55);
+  /* the seek bar on the video: a groove with an inner shadow, a glossy fill */
+  --vc-groove: rgba(255, 255, 255, 0.16);
+  --vc-groove-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.7), 0 1px 0 rgba(255, 255, 255, 0.08);
+  --vc-gloss: linear-gradient(rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0) 55%), linear-gradient(90deg, var(--accent-lo), var(--accent-hi));
+
+  /* Accent: cobalt, with quickRS's key ramp (hi / mid / lo / lower edge) and LED glow. */
+  --accent: #3b6ac5;            /* fill; white text 5.18:1 */
+  --accent-hi: #5a86d8;
+  --accent-lo: #3360b8;
+  --accent-edge: #284f9c;
+  --accent-hover: var(--accent-hi);
+  --accent-pressed: var(--accent-lo);
+  --accent-glow: rgba(90, 134, 216, 0.45);
+  --on-accent: #ffffff;         /* text and glyphs on accent, danger and recording fills */
+  --danger-fill: #b3261e;       /* destructive key; white text 6.4:1 */
+  --danger-hi: #c9362c;
+  --danger-edge: #861a14;
+  --rec: #ff466e;               /* recording: the ruby's glow (text and icons) */
+  --rec-fill: #8b1329;          /* recording: the ruby's body */
+  --rec-ring: rgba(255, 70, 110, 0.35);
+  --ally: var(--c-victory);
+  --enemy: var(--c-defeat);
+
+  /* Type: Manrope (SIL OFL, src/renderer/fonts), weights 500/600/700/800, tabular figures */
+  --font-ui: "Manrope", "Segoe UI", system-ui, sans-serif;
+  --font-ui-small: var(--font-ui);
+  --font-display: var(--font-ui);
+  --font-numeric: var(--font-ui);
+  --font-mono: "Cascadia Mono", Consolas, monospace;   /* file paths and logs only */
+  --weight-regular: 500;
+  --weight-semibold: 600;
+  --weight-strong: 700;
+  --weight-heavy: 800;
+
+  --text-label: 800 11px/14px var(--font-ui);           /* small caps: uppercase, tracked (.label) */
+  --label-track: 0.08em;
+  --text-kbd: 700 11px/1 var(--font-ui);
+  --text-caption: 600 12px/16px var(--font-ui);         /* meta, timestamps, counts, badges */
+  --text-button: 700 13px/18px var(--font-ui);
+  --text-body: 500 14px/20px var(--font-ui);            /* default UI text, nav, settings rows */
+  --text-body-strong: 700 14px/20px var(--font-ui);     /* card titles, active nav */
+  --text-subtitle: 700 16px/22px var(--font-ui);        /* dialog, player and section titles */
+  --text-title: 800 22px/28px var(--font-display);      /* page titles */
+  --text-title-lg: 800 28px/36px var(--font-display);
+  --title-track: -0.01em;
+  --text-stat: 800 18px/24px var(--font-numeric);       /* KDA / CS / time readouts */
+  --text-stat-md: 800 16px/20px var(--font-numeric);
+  --text-stat-sm: 700 12px/16px var(--font-numeric);    /* duration badges, timeline time */
+  --text-tick: 700 11px/12px var(--font-numeric);       /* time ruler labels */
+
+  /* Space: 4 px grid (quickRS rhythm: page 28, blocks 22-32, cards 18-22) */
+  --sp-0-5: 2px;
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+
+  /* Shape */
+  --r-xs: 5px;      /* key caps, ticks, small chips */
+  --r-sm: 7px;      /* buttons (flat keys), tags, rows */
+  --r-md: 12px;     /* inputs, search, thumbnails, menus, raised rows */
+  --r-lg: 16px;     /* popovers, dialogs, toasts, cards */
+  --r-xl: 22px;     /* hero cards */
+  --r-full: 999px;  /* switches, LEDs, round keys, pills */
+
+  /* Surfaces (quickRS round 3), built from the theme's light and shade */
+  --shadow-pad: 0 1px 3px var(--sh), inset 0 1px 0 var(--hi);
+  --shadow-pad-hover: 0 2px 6px var(--sh), inset 0 1px 0 var(--hi);
+  --shadow-pad-press: inset 0 1px 2px var(--sh);
+  --shadow-well: inset 0 1.4px 2.8px var(--sh-deep), 0 1px 0 var(--hi-lip);
+  --shadow-focus-in: inset 0 0 14px rgba(59, 106, 197, 0.2), inset 0 -1px 0 var(--accent-text);
+  --shadow-key: 0 1px 1.2px var(--sh-deep), 0 2px 3.6px var(--sh);
+  --shadow-key-accent: var(--shadow-key), inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -1.6px 0 var(--accent-edge);
+  --shadow-key-accent-press: inset 0 1px 0 rgba(255, 255, 255, 0.22), inset 0 -1px 0 var(--accent-edge), 0 1px 1px var(--sh);
+  --shadow-key-danger: var(--shadow-key), inset 0 1px 0 rgba(255, 255, 255, 0.22), inset 0 -1.6px 0 var(--danger-edge);
+  --face-accent: radial-gradient(120% 70% at 50% 0%, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0) 55%), linear-gradient(180deg, var(--accent-hi), var(--accent) 55%, var(--accent-lo));
+  --face-danger: radial-gradient(120% 70% at 50% 0%, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 55%), linear-gradient(180deg, var(--danger-hi), var(--danger-fill) 55%, var(--danger-edge));
+  --kbd-on-key: rgba(0, 10, 40, 0.22);
+  --shadow-kbd-on-key: inset 0 1px 2px rgba(0, 10, 40, 0.35), 0 1px 0 rgba(255, 255, 255, 0.18);
+  /* ivory: switch and slider thumbs, the seek knob, the playhead */
+  --ivory: radial-gradient(circle at 40% 28%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0) 48%), linear-gradient(180deg, #fbf7ec, #ddd2bb);
+  --ivory-flat: #f3ecdc;
+  --ivory-edge: #b9a984;
+  --shadow-thumb: 0 1px 1px rgba(0, 0, 0, 0.5), 0 2px 5px rgba(0, 0, 0, 0.35), inset 0 -1px 1px rgba(0, 0, 0, 0.12);
+  /* LEDs: the current choice / on state; status lamps */
+  --led: radial-gradient(circle at 38% 32%, #c4dcff, #6f9cec 45%, #3b6ac5);
+  --glow-led: 0 0 4px var(--accent-glow), inset 0 -1px 1px rgba(0, 0, 0, 0.3);
+  --led-off: var(--bg-track);
+  --glow-ok: 0 0 4px rgba(92, 203, 134, 0.45), inset 0 -1px 1px rgba(0, 0, 0, 0.3);
+  --glow-warn: 0 0 4px rgba(240, 138, 75, 0.45), inset 0 -1px 1px rgba(0, 0, 0, 0.3);
+  /* the one jewel: the recording lamp (lit ruby, dark garnet when not recording) */
+  --jewel-ruby: radial-gradient(circle at 35% 30%, #ff8aa3, #c21d43 45%, #6d0c20);
+  --glow-ruby: 0 0 4px rgba(255, 70, 110, 0.5), 0 0 0 1px rgba(40, 0, 8, 0.55);
+  --jewel-garnet: radial-gradient(circle at 35% 30%, #8a3346, #4c1323 50%, #2a0812);
+  --glow-garnet: 0 0 0 1px rgba(40, 0, 8, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.08);
+  /* enamel event pins: a domed sheen over the event colour, a dark rim */
+  --enamel: radial-gradient(circle at 35% 28%, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0) 46%), radial-gradient(circle at 50% 70%, rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0) 60%);
+  --enamel-rim: 0 0 0 1.5px rgba(255, 255, 255, 0.18), 0 0 0 2.5px rgba(0, 0, 0, 0.45), 0 2px 4px rgba(0, 0, 0, 0.5);
+  /* floating */
+  --blur-glass: blur(18px) saturate(150%);
+  --shadow-tooltip: 0 2px 6px var(--sh-deep), inset 0 1px 0 var(--hi);
+  --shadow-flyout: inset 0 1px 0 var(--hi), 0 8px 15px -3px var(--sh-deep), 0 1px 3px var(--sh), 0 0 22px var(--halo);
+  --shadow-toast: inset 0 1px 0 var(--hi), 0 10px 24px -6px var(--sh-deep), 0 1px 3px var(--sh);
+  --shadow-dialog: inset 0 1px 0 var(--hi), 0 26px 50px -10px var(--sh-deep), 0 4px 10px var(--sh);
+  --shadow-art: 0 8px 18px -10px var(--sh-deep);
+  /* scroll areas fade at their edges instead of cutting content */
+  --fade-y: linear-gradient(180deg, transparent, #000 14px, #000 calc(100% - 22px), transparent);
+  --fade-x: linear-gradient(90deg, #000, #000 calc(100% - 28px), transparent);
+
+  /* The trim lane: a dark recessed groove in every theme (like a monitor), faint scanlines,
+     sprocket strips along its top and bottom; the time ruler is etched above it */
+  --lane-bg: #070707;
+  --lane-tick: var(--line-strong);
+  --lane-tick-major: var(--text-3);
+  --lane-face: repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.022) 0 1px, transparent 1px 3px), linear-gradient(180deg, rgba(0, 0, 0, 0.3), rgba(255, 255, 255, 0.03) 60%, rgba(0, 0, 0, 0.18));
+  --sprockets: repeating-linear-gradient(90deg, transparent 0 4px, rgba(255, 255, 255, 0.15) 4px 9px, transparent 9px 14px) center / 100% 3px no-repeat, #0d0d0d;
+  --lane-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.75), inset 0 -1px 0 rgba(255, 255, 255, 0.05), 0 1px 0 var(--hi-lip);
+  --lane-dim: rgba(0, 0, 0, 0.6);
+  /* the kept range: a lit glass band */
+  --lane-band: linear-gradient(180deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0) 35%), rgba(59, 106, 197, 0.14);
+  --lane-band-edge: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  /* trim grips: knurled accent keys with a bevel */
+  --grip-face: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.4) 0 1px, rgba(255, 255, 255, 0.28) 1px 2px, transparent 2px 4px) center / 4px 46% no-repeat, linear-gradient(90deg, var(--accent-hi), var(--accent) 55%, var(--accent-lo));
+  --grip-bevel: 0 2px 4px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -1.5px 0 var(--accent-edge);
+  --grip-press: inset 0 1px 2px rgba(0, 0, 0, 0.45), inset 0 -1px 0 var(--accent-edge), 0 1px 1px rgba(0, 0, 0, 0.45);
+  --playhead: #ffffff;
+  --playhead-glow: 0 0 3px rgba(255, 255, 255, 0.35);
+  /* the seek bar on the video: glossy fill, faint glow, ivory knob with a fine accent ring */
+  --vc-fill-glow: 0 0 3px rgba(90, 134, 216, 0.35);
+  --knob-ring: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 0 0 2.5px rgba(59, 106, 197, 0.4), 0 2px 4px rgba(0, 0, 0, 0.5);
+
+  /* Focus: accent ring for keys; text fields light up inside instead */
+  --focus-ring: var(--accent-text);
+  --focus-width: 2px;
+  --focus-offset: 2px;
+
+  /* Motion (quickRS: 90 ms feedback, 160 ms settle, cubic ease-out) */
+  --dur-1: 90ms;
+  --dur-2: 160ms;
+  --dur-3: 250ms;
+  --ease-out: cubic-bezier(0.33, 1, 0.68, 1);
+  --ease-standard: ease;
+  --ease-in: cubic-bezier(0.32, 0, 0.67, 0);
+
+  /* Icons: line icons, 2 px round stroke */
+  --icon-sm: 16px;
+  --icon-md: 20px;
+  --icon-lg: 24px;
+  --icon-stroke: 2px;
+
+  /* Layout */
+  --titlebar-h: 48px;
+  --caption-w: 138px;   /* area where Windows draws the system caption buttons */
+  --sidebar-w: 232px;
+  --control-h: 36px;
+  --control-h-sm: 30px;
+  --control-h-xs: 24px;
+  --row-h: 36px;
+  --tile-min: 240px;
+  --gutter: 28px;
+
+  --kb-lit: var(--accent-text);
+
+  /* Legacy aliases: keep the older rules working on the new palette. Delete each one once
+     nothing uses it any more (grep for it). */
+  --bg: var(--bg-layer);
+  --panel: var(--bg-base);
+  --panel-2: var(--bg-surface);
+  --panel-3: var(--bg-selected);
+  --line-2: var(--line-strong);
+  --text: var(--text-1);
+  --muted: var(--text-2);
+  --faint: var(--text-3);
+  --green: var(--success);
+  --red: var(--danger);
+  --amber: var(--warning);
+  --radius: var(--r-sm);
+}
+
+/* ================================================================== Midnight (quickRS navy) */
+:root[data-theme="midnight"] {
+  --gray-0:   #05090d;
+  --gray-50:  #0f1c28;
+  --gray-100: #111f2b;
+  --gray-150: #152534;
+  --gray-200: #172634;
+  --gray-250: #1c2c3b;
+  --gray-300: #3d4f61;
+  --gray-400: #5a6b7d;
+  --gray-500: #8394a6;
+  --gray-600: #b2c0cf;
+  --gray-700: #e7eef6;
+  --bg-well: #0d1924;
+  --bg-screen: #0a151e;
+  --bg-screen-hi: #12202c;
+  --bg-glass: rgba(21, 37, 52, 0.78);
+  --bg-track: #08121a;
+  --line-subtle: rgba(160, 190, 215, 0.07);
+  --line: rgba(160, 190, 215, 0.12);
+  --line-strong: rgba(160, 200, 240, 0.2);
+  --scrim: rgba(3, 8, 14, 0.55);
+  --edge-glass: rgba(160, 200, 240, 0.1);
+  --sh: rgba(0, 4, 10, 0.4);
+  --sh-deep: rgba(0, 4, 10, 0.5);
+  --hi: rgba(140, 180, 230, 0.08);
+  --hi-lip: rgba(140, 180, 230, 0.04);
+  --halo: rgba(140, 180, 230, 0.06);
+  --c-structure: #9aa9b8;
+  --on-marker: #0a151e;
+  --kb-case: #0b1620;
+  --kb-key: #1b2a38;
+  --kb-edge: #2c3e50;
+  --kb-text: #d5dfea;
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23b2c0cf' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  --lane-bg: #07111a;
+}
+
+/* ================================================================== Light (quickRS Daylight) */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --gray-0:   #1a1714;   /* the video stage stays dark */
+  --gray-50:  #e0dbd6;   /* base: title bar, sidebar */
+  --gray-100: #e9e5e1;   /* the material */
+  --gray-150: #f5f3f0;   /* floating surface */
+  --gray-200: #f3f0ed;   /* pad face */
+  --gray-250: #d9d3cd;   /* pressed / selected fill */
+  --gray-300: #b2a9a1;
+  --gray-400: #9a9189;
+  --gray-500: #6b645e;   /* captions (5.0:1 on the material) */
+  --gray-600: #5e5852;
+  --gray-700: #2e2a27;
+  --bg-well: #dcd6d0;
+  --bg-screen: #d3ccc5;
+  --bg-screen-hi: #c9c1b9;
+  --bg-glass: rgba(246, 244, 241, 0.86);
+  --bg-track: #c4bcb4;
+  --line-subtle: rgba(80, 60, 40, 0.1);
+  --line: rgba(80, 60, 40, 0.15);
+  --line-strong: rgba(80, 60, 40, 0.26);
+  --scrim: rgba(60, 50, 40, 0.3);
+  --edge-glass: rgba(255, 255, 255, 0.7);
+  --sh: rgba(110, 90, 70, 0.3);
+  --sh-deep: rgba(100, 80, 60, 0.32);
+  --hi: rgba(255, 255, 255, 0.9);
+  --hi-lip: rgba(255, 255, 255, 0.75);
+  --halo: rgba(255, 255, 255, 0.4);
+  --accent-text: #2a56b0;       /* 6.0:1 on the material */
+  --accent-subtle: rgba(59, 106, 197, 0.16);
+  --accent-soft: rgba(59, 106, 197, 0.1);
+  --success: #11703c;
+  --warning: #a2470b;
+  --danger: #b02f26;
+  --c-victory: #2f6fd0;
+  --c-defeat: #c8372e;
+  --c-defeat-text: #a82a22;
+  --c-kill: #1e8a4a;
+  --c-assist: #16809a;
+  --c-death: #c8372e;
+  --c-highlight: #b88400;
+  --c-objective: #7d4fb8;
+  --c-structure: #6d7681;
+  --c-bookmark: #b5487f;
+  --on-marker: #ffffff;
+  --win-tint: rgba(47, 111, 208, 0.12);
+  --loss-tint: rgba(200, 55, 46, 0.1);
+  --kb-case: #d3ccc5;
+  --kb-key: #f6f3f0;
+  --kb-edge: #b9b0a7;
+  --kb-text: #2e2a27;
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235e5852' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  --shadow-focus-in: inset 0 0 12px rgba(59, 106, 197, 0.16), inset 0 -1px 0 var(--accent-text);
+  --led-off: #b5aca3;
+}

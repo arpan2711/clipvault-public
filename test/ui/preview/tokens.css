@@ -1,0 +1,141 @@
+/* ClipVault design tokens (proposal). Source: reports/B1-vibe-research.md section 4.2.
+   Graphite neutrals, one cobalt accent, League data colours at equal visual weight,
+   Windows 11 type ramp (Segoe UI Variable, 400/600), Bahnschrift tabular figures for stats. */
+:root {
+  color-scheme: dark;
+
+  /* Neutrals: graphite (OKLCH h255, C~0.006). Lightness steps carry elevation. */
+  --gray-0:   #060709;   /* video stage */
+  --gray-50:  #111315;   /* base layer: title bar, sidebar, player chrome */
+  --gray-100: #181a1c;   /* content layer: library, settings, match page body */
+  --gray-150: #1f2123;   /* surface: inputs, menus, popovers, dialogs, toasts, tooltips */
+  --gray-200: #26282b;   /* hover fill */
+  --gray-250: #2e3033;   /* pressed / selected fill, timeline track */
+  --gray-300: #3b3d40;   /* solid stroke over video, slider rail */
+  --gray-400: #5b5e61;   /* disabled text and icons */
+  --gray-500: #8e9194;   /* tertiary text */
+  --gray-600: #b4b6b9;   /* secondary text, default icon colour */
+  --gray-700: #ebedef;   /* primary text */
+
+  --bg-stage: var(--gray-0);
+  --bg-base: var(--gray-50);
+  --bg-layer: var(--gray-100);
+  --bg-surface: var(--gray-150);
+  --bg-hover: var(--gray-200);
+  --bg-selected: var(--gray-250);
+  --text-1: var(--gray-700);
+  --text-2: var(--gray-600);
+  --text-3: var(--gray-500);
+  --text-disabled: var(--gray-400);
+  --line-subtle: rgba(255, 255, 255, 0.06);
+  --line: rgba(255, 255, 255, 0.09);
+  --line-strong: rgba(255, 255, 255, 0.16);
+  --line-solid: var(--gray-300);
+  --scrim: rgba(0, 0, 0, 0.5);
+
+  /* Accent: one colour, used sparingly (primary action, selection, progress). */
+  --accent: #3b6ac5;
+  --accent-hover: #4474cf;
+  --accent-pressed: #305eb7;
+  --accent-text: #85b3f7;
+  --accent-subtle: rgba(59, 106, 197, 0.16);
+  --on-accent: #ffffff;
+
+  /* System status */
+  --success: #61cb7c;
+  --warning: #f7ac4d;
+  --danger: #ea5c64;
+  --danger-fill: #cc3430;
+  --rec: #ed413b;
+  --rec-fill: #cc3430;
+
+  /* League semantics (data colours, equal weight) */
+  --c-victory: #679ff1;
+  --c-defeat: #ea5c64;
+  --c-defeat-text: #ee6c73;     /* red text on --loss-tint: 4.8:1 (plain --c-defeat is 4.2:1 there) */
+  --c-kill: #61cb7c;
+  --c-assist: #5bc1d9;
+  --c-death: #ea5c64;
+  --c-highlight: #ecbd51;
+  --c-objective: #b691e1;
+  --c-structure: #9ca5b1;
+  --c-bookmark: #e8a7cb;
+  --on-marker: #111315;
+  --win-tint: rgba(103, 159, 241, 0.16);
+  --loss-tint: rgba(234, 92, 100, 0.16);
+  --ally: var(--c-victory);
+  --enemy: var(--c-defeat);
+
+  /* Type (Windows 11 ramp; weights 400/600 only) */
+  --font-ui: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font-ui-small: "Segoe UI Variable Small", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --font-numeric: Bahnschrift, "Segoe UI Variable Text", "Segoe UI", sans-serif;
+  --font-mono: "Cascadia Mono", Consolas, monospace;
+  --weight-regular: 400;
+  --weight-strong: 600;
+
+  --text-caption: 400 12px/16px var(--font-ui-small);
+  --text-body: 400 14px/20px var(--font-ui);
+  --text-body-strong: 600 14px/20px var(--font-ui);
+  --text-subtitle: 600 16px/22px var(--font-ui);
+  --text-title: 600 20px/28px var(--font-display);
+  --text-title-lg: 600 28px/36px var(--font-display);
+  --text-stat: 600 20px/24px var(--font-numeric);
+  --text-stat-md: 600 16px/20px var(--font-numeric);
+  --text-stat-sm: 600 12px/16px var(--font-numeric);
+
+  /* Space: 4 px grid */
+  --sp-0-5: 2px;
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+
+  /* Shape */
+  --r-xs: 2px;
+  --r-sm: 4px;
+  --r-md: 8px;
+  --r-full: 999px;
+
+  /* Elevation: lightness first; shadows only for floating UI */
+  --shadow-tooltip: 0 0 2px rgba(0, 0, 0, 0.24), 0 4px 8px rgba(0, 0, 0, 0.28);
+  --shadow-flyout: 0 0 2px rgba(0, 0, 0, 0.24), 0 8px 16px rgba(0, 0, 0, 0.28);
+  --shadow-toast: 0 0 8px rgba(0, 0, 0, 0.24), 0 14px 28px rgba(0, 0, 0, 0.28);
+  --shadow-dialog: 0 0 8px rgba(0, 0, 0, 0.24), 0 32px 64px rgba(0, 0, 0, 0.28);
+
+  /* Focus */
+  --focus-ring: #ffffff;
+  --focus-width: 2px;
+  --focus-offset: 2px;
+
+  /* Motion */
+  --dur-1: 83ms;
+  --dur-2: 167ms;
+  --dur-3: 250ms;
+  --ease-out: cubic-bezier(0, 0, 0, 1);
+  --ease-standard: cubic-bezier(0.33, 0, 0.67, 1);
+  --ease-in: cubic-bezier(0.8, 0, 0.78, 1);
+
+  /* Icons */
+  --icon-sm: 16px;
+  --icon-md: 20px;
+  --icon-lg: 24px;
+  --icon-stroke: 1.5px;
+
+  /* Layout */
+  --titlebar-h: 48px;
+  --caption-w: 138px;   /* area where Windows draws the system caption buttons */
+  --sidebar-w: 232px;
+  --control-h: 32px;
+  --control-h-sm: 28px;
+  --control-h-xs: 24px;
+  --row-h: 32px;
+  --tile-min: 240px;
+  --gutter: 24px;
+}

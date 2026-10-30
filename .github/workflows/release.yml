@@ -1,0 +1,70 @@
+# Builds the Windows installer and portable zip from a version tag (v1.2.3), so every release is made
+# from this repository's source with no manual steps (see docs/CODE_SIGNING.md). The files go to a
+# draft GitHub release; publish it by hand after checking it. Run it by hand (workflow_dispatch) to
+# get the files as a build artifact without a release.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # The tag must match package.json, or the in-app update check sees the release as an update
+      # over itself.
+      - name: Check the version
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          v=$(node -p "require('./package.json').version")
+          [ "v$v" = "${GITHUB_REF_NAME}" ] || { echo "package.json is $v but the tag is ${GITHUB_REF_NAME}"; exit 1; }
+
+      # npm ci runs setup.js: downloads FFmpeg into bin\ and compiles bin\cvhelper.exe from
+      # helper\cvhelper.cs with the .NET Framework compiler that ships with Windows.
+      - name: Install
+        run: npm ci
+
+      - name: Unit tests
+        run: node test/css-lint.js && node test/library-test.js && node test/match-test.js && node test/match-wiring-test.js && node test/killcam-test.js && node test/hotkeys-test.js && node test/recovery-test.js && node test/update-test.js
+
+      - name: Build the installer and the portable zip
+        run: |
+          node scripts/build-release-icon.js
+          npx electron-builder --win nsis zip --publish never
+
+      # Code signing (SignPath Foundation) goes here once the project is accepted: upload the files
+      # with signpath/github-action-submit-signing-request and use the signed ones below.
+
+      - name: SHA-256
+        shell: bash
+        run: cd dist && sha256sum ClipVault-Setup-*.exe ClipVault-*-win-x64.zip | tee SHA256SUMS.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: clipvault-windows
+          path: |
+            dist/ClipVault-Setup-*.exe
+            dist/ClipVault-*-win-x64.zip
+            dist/SHA256SUMS.txt
+
+      - name: Draft release
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" --draft --title "ClipVault ${GITHUB_REF_NAME#v}" --notes "Release notes to follow." \
+            dist/ClipVault-Setup-*.exe dist/ClipVault-*-win-x64.zip dist/SHA256SUMS.txt

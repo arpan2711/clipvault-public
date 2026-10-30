@@ -1,0 +1,67 @@
+/* Pieces shared by the newer views (Matches) and the dialogs. Tokens only (see css/tokens.css). */
+
+/* The Matches page: same side padding as the library grid, with a header that stays in view. */
+.mv-page { padding: 0 28px 32px; }
+.mv-page #mvHead { position: sticky; top: 0; z-index: 2; padding: 18px 0 var(--sp-3); background: var(--bg-layer); }
+.mv-page .selbar:not([hidden]) { margin-bottom: var(--sp-3); }
+
+/* Right-click and "more" menus of the Matches view, above the page and below dialogs. */
+.mv-menu-layer { position: fixed; z-index: 44; }
+
+/* Lines listed in a confirmation, e.g. the files a delete moves to the Recycle Bin. */
+.dialog-list {
+  margin: -8px 0 18px;
+  padding: var(--sp-2) var(--sp-3);
+  max-height: 220px;
+  overflow: auto;
+  list-style: none;
+  border-radius: var(--r-sm);
+  background: var(--bg-layer);
+  color: var(--text-2);
+  font: var(--text-caption);
+  font-variant-numeric: tabular-nums;
+}
+.dialog-list li + li { margin-top: var(--sp-1); }
+
+/* Report a bug: two text boxes, the diagnostics checkbox and a preview of what it adds. */
+.bug-form { display: flex; flex-direction: column; gap: var(--sp-3); margin-bottom: var(--sp-5); }
+.bug-form > label { display: flex; flex-direction: column; gap: var(--sp-1); font: var(--text-body-strong); }
+.bug-form > label span { font: var(--text-caption); color: var(--text-3); }
+.bug-form textarea {
+  min-height: 64px;
+  max-height: 200px;
+  padding: var(--sp-2) var(--sp-3);
+  border: 0;
+  border-radius: var(--r-md);
+  outline: 0;
+  resize: vertical;
+  background: var(--bg-well);
+  box-shadow: var(--shadow-well);
+  color: var(--text-1);
+  font: var(--text-body);
+  transition: box-shadow var(--dur-2) var(--ease-standard);
+}
+.bug-form textarea:focus-visible { box-shadow: var(--shadow-well), var(--shadow-focus-in); }
+.bug-form textarea::placeholder { color: var(--text-3); }
+.bug-form > label.bug-check { flex-direction: row; align-items: center; gap: var(--sp-2); font: var(--text-body); font-weight: var(--weight-strong); }
+.bug-diag summary { color: var(--accent-text); font: var(--text-caption); }
+.bug-diag pre {
+  margin: var(--sp-2) 0 0;
+  padding: var(--sp-2) var(--sp-3);
+  max-height: 180px;
+  overflow: auto;
+  border-radius: var(--r-sm);
+  background: var(--bg-layer);
+  color: var(--text-2);
+  font: 500 11px/16px var(--font-mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.bug-diag[hidden] { display: none; }
+.bug-done { margin: 0 0 var(--sp-5); color: var(--text-2); }
+.bug-done b { color: var(--text-1); }
+.dialog .buttons .spacer { flex: 1; }
+
+/* Settings → About: a new version, its notes and the Download button. */
+.update-row .lbl .notes { margin-top: var(--sp-2); white-space: pre-line; color: var(--text-2); }
+.storage .sep { padding: 0 var(--sp-1); }

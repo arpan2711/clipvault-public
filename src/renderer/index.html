@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' file: data:; media-src 'self' file:">
+  <title>ClipVault</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/views/matches.css">
+  <link rel="stylesheet" href="css/views/match.css">
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><rect class="mark-bg" x="0.5" y="0.5" width="15" height="15" rx="3"/><path class="mark-fg" d="M6 4.8v6.4L11.2 8z"/></svg>
+        <span>ClipVault</span>
+      </div>
+      <button class="status" id="status" title="Turn the replay buffer on or off"></button>
+      <div class="job-pill" id="jobPill" hidden></div>
+      <div class="top-actions">
+        <button class="btn rec-btn" id="recBtn"></button>
+        <button class="btn primary" id="clipBtn"></button>
+      </div>
+    </header>
+    <div class="banner" id="banner" hidden></div>
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="content" id="content"></main>
+  </div>
+
+  <div class="player" id="player" hidden></div>
+  <div class="dialog-backdrop" id="dialog" hidden></div>
+  <div class="popover" id="popover" hidden></div>
+  <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+  <script src="keyboard.js"></script>
+  <script src="events.js"></script>
+  <script src="range-video.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

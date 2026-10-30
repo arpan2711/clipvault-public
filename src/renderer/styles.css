@@ -1,0 +1,994 @@
+/* Tokens (colours, type, radii, surfaces, motion) live in css/tokens.css, loaded first.
+   The language is quickRS's: one navy material; pads stand up out of it (buttons, raised rows),
+   wells are pressed into it (inputs, tracks), readouts sit on dark screens. */
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg-layer);
+  color: var(--text-1);
+  font: var(--text-body);
+  font-variant-numeric: tabular-nums; /* every number lines up */
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  user-select: none;
+}
+
+button, input, select { font: inherit; color: inherit; }
+b, strong, h1, h2, h3 { font-weight: var(--weight-strong); }
+/* The pointing hand on everything you can click (quickRS), the arrow on what you can't. */
+button, select, summary, label.chk, .switch, input[type="checkbox"], input[type="range"], [data-act]:not(input):not(div):not(section) { cursor: pointer; }
+button:disabled, select:disabled, input:disabled { cursor: default; }
+[hidden] { display: none !important; }
+
+/* Scrollbars: a pad-coloured thumb in a clear groove */
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-thumb { background: var(--bg-selected); background-clip: padding-box; border-radius: var(--r-full); border: 3px solid transparent; }
+::-webkit-scrollbar-thumb:hover { background-color: var(--line-solid); }
+::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+
+:focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: var(--focus-offset); }
+
+/* Nothing moves for people who ask Windows for less animation (the spinner and the recording
+   lamp stop too; their static look still says what they mean). */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
+}
+
+/* One icon family: a constant 2 px round stroke at any icon size. */
+svg.i { width: var(--icon-sm); height: var(--icon-sm); flex: none; fill: none; stroke: currentColor; stroke-width: var(--icon-stroke); stroke-linecap: round; stroke-linejoin: round; }
+svg.i * { vector-effect: non-scaling-stroke; }
+/* Event tokens (event-icons.svg): forged plates, each its own shape and colour. Their shadow and
+   glow reach a little past the box. */
+svg.ev { display: block; flex: none; width: 18px; height: 18px; overflow: visible; }
+
+/* Key caps: small and sunk into the material; engraved on an accent key. */
+kbd {
+  display: inline-block;
+  min-width: 18px;
+  font: var(--text-kbd);
+  line-height: 18px;
+  padding: 0 6px;
+  border-radius: var(--r-xs);
+  background: var(--bg-well);
+  box-shadow: var(--shadow-well);
+  color: var(--text-2);
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Small-caps section label (quickRS): 11 px / 800, uppercase, tracked. */
+.label, .nav-label, .day, .pop-title, .card-s > h2, .card-s > h3 {
+  font: var(--text-label);
+  letter-spacing: var(--label-track);
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+/* The LED of an "on" choice: a 7 px lit accent dot before the label (with a heavier label). */
+.seg button.on::before, .autoplay.on::before, .kb-head-btn.on::before {
+  content: "";
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--r-full);
+  background: var(--led);
+  box-shadow: var(--glow-led);
+}
+
+/* ------------------------------------------------------------------ layout */
+
+.app {
+  display: grid;
+  grid-template-columns: 236px 1fr;
+  grid-template-rows: auto auto 1fr;
+  height: 100vh;
+}
+
+/* The header is the window's title bar: draggable, 48 px, with the right end left clear for the
+   minimize / maximize / close buttons Windows draws there (titleBarOverlay in main.js). */
+.topbar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: var(--titlebar-h);
+  padding: 0 calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw) + 12px) 0 16px;
+  border-bottom: 1px solid var(--line-subtle);
+  background: var(--bg-base);
+  -webkit-app-region: drag;
+}
+.topbar button, .topbar input, .topbar select, .topbar a, .topbar .job-pill { -webkit-app-region: no-drag; }
+/* Things that float over the title bar must take clicks, not drag the window. */
+.dialog-backdrop, .popover, .mv-menu-layer { -webkit-app-region: no-drag; }
+
+.brand { display: flex; align-items: center; gap: 10px; width: 196px; font: var(--text-subtitle); font-weight: var(--weight-heavy); letter-spacing: var(--title-track); }
+.brand svg { width: 26px; height: 26px; filter: drop-shadow(0 1px 1.5px var(--vc-outline)); }
+.brand .mark-bg { fill: var(--bg-pad); stroke: var(--line); stroke-width: 0.5; }
+.brand .mark-fg { fill: var(--accent-text); }
+
+.top-actions { margin-left: auto; display: flex; gap: 10px; }
+
+.banner {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  background: color-mix(in srgb, var(--danger) 12%, var(--bg-layer));
+  border-bottom: 1px solid color-mix(in srgb, var(--danger) 30%, transparent);
+  color: var(--text-1);
+  user-select: text;
+}
+.banner .btn { margin-left: auto; }
+
+/* The sidebar is a floor a shade under the page. */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 16px 12px;
+  border-right: 1px solid var(--line-subtle);
+  background: var(--bg-base);
+  overflow-y: auto;
+}
+
+/* Scroll areas fade at their edges instead of cutting content. */
+.content { min-width: 0; min-height: 0; overflow-y: auto; -webkit-mask-image: var(--fade-y); mask-image: var(--fade-y); }
+/* Pin both to the stretchy last row (row 2 is the error banner, usually hidden), so they fill
+   the window even when the library is short. */
+.sidebar, .content { grid-row: 3; }
+
+/* ------------------------------------------------------------------ buttons */
+
+/* Pads: a face a shade lighter than the material, a short soft drop and a faint top light.
+   Hover lifts 1 px, press drops; the primary is the cobalt key; disabled is sunk. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: var(--control-h);
+  padding: 0 14px;
+  border-radius: var(--r-sm);
+  border: 0;
+  background: var(--bg-pad);
+  box-shadow: var(--shadow-pad);
+  color: var(--text-1);
+  font: var(--text-button);
+  white-space: nowrap;
+  transition: transform var(--dur-1) var(--ease-out), box-shadow var(--dur-1) var(--ease-out), background-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
+}
+.btn svg.i { color: var(--text-2); }
+.btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: var(--shadow-pad-hover); color: var(--text-1); }
+.btn:hover:not(:disabled) svg.i { color: var(--text-1); }
+.btn:active:not(:disabled) { transform: translateY(1px); box-shadow: var(--shadow-pad-press); }
+/* Disabled: pressed into the material, dim label, whatever its kind */
+.btn:disabled, .btn.primary:disabled, .btn.solid-danger:disabled, .rec-btn.recording:disabled { color: var(--text-disabled); background: var(--bg-well); box-shadow: var(--shadow-well); }
+.btn:disabled svg.i { color: var(--text-disabled); }
+.btn.primary { background: var(--face-accent); box-shadow: var(--shadow-key-accent); color: var(--on-accent); font-weight: var(--weight-heavy); }
+.btn.primary svg.i, .btn.solid-danger svg.i { color: var(--on-accent); }
+.btn.primary:hover:not(:disabled) { box-shadow: var(--shadow-key-accent), 0 3px 8px var(--accent-subtle); }
+.btn.primary:active:not(:disabled) { box-shadow: var(--shadow-key-accent-press); }
+.btn.ghost { background: transparent; box-shadow: none; color: var(--text-2); }
+.btn.ghost:hover:not(:disabled) { background: var(--bg-pad); box-shadow: var(--shadow-pad); color: var(--text-1); }
+.btn.ghost:active:not(:disabled) { box-shadow: var(--shadow-pad-press); }
+.btn.ghost:disabled { background: transparent; box-shadow: none; }
+.btn.danger, .btn.danger svg.i { color: var(--danger); }
+.btn.solid-danger { background: var(--face-danger); box-shadow: var(--shadow-key-danger); color: var(--on-accent); font-weight: var(--weight-heavy); }
+.btn.solid-danger:active:not(:disabled) { box-shadow: var(--shadow-pad-press); }
+.btn.sm { height: var(--control-h-sm); padding: 0 11px; gap: 7px; }
+.btn.sm kbd { line-height: 16px; min-width: 16px; padding: 0 5px; }
+.btn.primary kbd, .btn.solid-danger kbd { background: var(--kbd-on-key); box-shadow: var(--shadow-kbd-on-key); color: var(--on-accent); }
+.btn:disabled kbd, .btn.primary:disabled kbd { background: transparent; box-shadow: none; color: var(--text-disabled); }
+
+/* The recording lamp: a dark garnet while idle, a lit ruby while recording (quickRS's jewel lamp). */
+.rec-btn .dot { width: 10px; height: 10px; flex: none; border-radius: var(--r-full); background: var(--jewel-garnet); box-shadow: var(--glow-garnet); }
+.rec-btn.recording { color: var(--text-1); box-shadow: var(--shadow-pad), inset 0 0 0 1px var(--rec-ring); }
+.rec-btn.recording .dot { background: var(--jewel-ruby); box-shadow: var(--glow-ruby); animation: rec-glow 1.2s var(--ease-standard) infinite alternate; }
+.rec-btn.recording kbd { color: var(--text-1); }
+#recTime { font-variant-numeric: tabular-nums; color: var(--rec); font-weight: var(--weight-heavy); }
+/* While recording, the lamp breathes instead of blinking on and off */
+@keyframes rec-glow { from { opacity: 1; } to { opacity: 0.55; } }
+
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: var(--r-sm);
+  border: 0;
+  background: transparent;
+  color: var(--text-2);
+  transition: background-color var(--dur-1) var(--ease-out), box-shadow var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
+}
+.icon-btn:hover:not(:disabled) { background: var(--bg-pad); box-shadow: var(--shadow-pad); color: var(--text-1); }
+.icon-btn:active:not(:disabled) { box-shadow: var(--shadow-pad-press); }
+
+.spinner { width: 14px; height: 14px; border-radius: var(--r-full); border: 2px solid color-mix(in srgb, currentColor 30%, transparent); border-top-color: currentColor; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ------------------------------------------------------------------ status chip */
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  max-width: 560px;
+  height: var(--control-h-sm);
+  padding: 0 14px 0 12px;
+  border-radius: var(--r-sm);
+  border: 0;
+  background: var(--bg-pad);
+  box-shadow: var(--shadow-pad);
+  text-align: left;
+  transition: box-shadow var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out);
+}
+.status:hover { transform: translateY(-1px); box-shadow: var(--shadow-pad-hover); }
+/* Its dot is a lamp: an unlit socket when off, lit green or amber */
+.status .dot { width: 8px; height: 8px; border-radius: var(--r-full); background: var(--led-off); box-shadow: var(--shadow-well), 0 0 0 1px var(--line); flex: none; }
+.status.on .dot { background: var(--success); box-shadow: var(--glow-ok); }
+.status.starting .dot { background: var(--warning); box-shadow: var(--glow-warn); }
+.status .label { font: var(--text-body-strong); line-height: 18px; letter-spacing: 0; text-transform: none; color: var(--text-1); white-space: nowrap; }
+.status .sub { font: var(--text-caption); color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.status .lines { display: flex; align-items: baseline; gap: 8px; min-width: 0; } /* one line, to fit the 48 px title bar */
+
+/* ------------------------------------------------------------------ sidebar */
+
+.nav-label { margin: 18px 10px 8px; }
+.nav-label:first-child { margin-top: 4px; }
+
+/* Flat rows; hover is a faint pad; the current one is a raised pad with accent text */
+.nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: var(--row-h);
+  margin-bottom: 2px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text-2);
+  font: var(--text-body);
+  font-weight: var(--weight-semibold);
+  text-align: left;
+  transition: background-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out), box-shadow var(--dur-1) var(--ease-out);
+}
+.nav-item:hover { background: color-mix(in srgb, var(--bg-pad) 70%, transparent); color: var(--text-1); }
+.nav-item.active { background: var(--bg-pad); box-shadow: var(--shadow-pad); color: var(--accent-text); font-weight: var(--weight-heavy); }
+.nav-item.active svg { color: var(--accent-text); }
+.nav-item .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav-item .count { font: var(--text-caption); color: var(--text-3); }
+.nav-item.active .count { color: var(--text-2); }
+.game-initial {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--r-xs);
+  font: var(--text-kbd);
+  background: var(--bg-well);
+  box-shadow: var(--shadow-well);
+  color: var(--text-2);
+  flex: none;
+}
+.nav-item.active .game-initial { color: var(--accent-text); }
+
+.sidebar-foot { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--line-subtle); }
+.storage { padding: 10px 10px 0; font: var(--text-caption); line-height: 20px; color: var(--text-3); }
+.storage button { padding: 0; border: 0; background: none; color: var(--accent-text); font-weight: var(--weight-strong); }
+.storage button:hover { text-decoration: underline; }
+
+/* ------------------------------------------------------------------ library */
+
+.lib-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 28px 14px;
+  background: var(--bg-layer); /* solid: thumbnails don't show through */
+}
+.lib-head h1 { margin: 0; font: var(--text-title); letter-spacing: var(--title-track); }
+.lib-head .total { color: var(--text-3); font: var(--text-caption); margin-top: 4px; }
+.lib-head .tools { margin-left: auto; display: flex; gap: 10px; }
+
+/* Inputs are dips pressed into the rubber: no border; focus lights them up inside. */
+.search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: var(--control-h);
+  width: 240px;
+  padding: 0 12px;
+  border-radius: var(--r-md);
+  border: 0;
+  background: var(--bg-well);
+  box-shadow: var(--shadow-well);
+  color: var(--text-3);
+  transition: box-shadow var(--dur-2) var(--ease-standard);
+}
+.search:focus-within { box-shadow: var(--shadow-well), var(--shadow-focus-in); }
+.search input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--text-1); font-weight: var(--weight-semibold); }
+.search input::placeholder { color: var(--text-3); font-weight: var(--weight-regular); }
+
+select {
+  height: var(--control-h);
+  padding: 0 32px 0 12px;
+  border-radius: var(--r-md);
+  border: 0;
+  background: var(--bg-well) var(--select-arrow) no-repeat right 11px center / 14px;
+  box-shadow: var(--shadow-well);
+  font-weight: var(--weight-semibold);
+  appearance: none;
+  outline: 0;
+  transition: box-shadow var(--dur-2) var(--ease-standard);
+}
+select:focus-visible { box-shadow: var(--shadow-well), var(--shadow-focus-in); }
+option { background: var(--bg-float); color: var(--text-1); }
+
+/* Checkboxes: a small dip; checked is a lit accent key with a white tick */
+input[type="checkbox"]:not(.switch) {
+  position: relative;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  flex: none;
+  border-radius: var(--r-xs);
+  background: var(--bg-well);
+  box-shadow: var(--shadow-well), inset 0 0 0 1px var(--line);
+}
+input[type="checkbox"]:not(.switch):checked { background: var(--face-accent); box-shadow: var(--shadow-key-accent); }
+input[type="checkbox"]:not(.switch):checked::after { content: ""; position: absolute; left: 5px; top: 2px; width: 4px; height: 8px; border: solid var(--on-accent); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+
+.lib-body { padding: 0 28px 32px; }
+.day { margin: 16px 0 10px; }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 22px 18px; }
+
+/* Clip cards: a pad with the thumbnail set into its top; hover lifts it 1 px */
+.card {
+  position: relative;
+  border-radius: var(--r-md);
+  background: var(--bg-pad);
+  box-shadow: var(--shadow-pad);
+  overflow: hidden;
+  transition: transform var(--dur-1) var(--ease-out), box-shadow var(--dur-1) var(--ease-out);
+}
+.card:hover { transform: translateY(-1px); box-shadow: var(--shadow-pad-hover); }
+
+.thumb { position: relative; aspect-ratio: 16 / 9; background: var(--bg-stage); overflow: hidden; }
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; transition: filter var(--dur-1) var(--ease-standard); }
+.card:hover .thumb img { filter: brightness(1.08); }
+.thumb-ph { width: 100%; height: 100%; display: grid; place-items: center; color: var(--text-3); }
+.thumb-ph svg { width: 28px; height: 28px; }
+.dur, .tag {
+  position: absolute;
+  padding: 2px 7px;
+  border-radius: var(--r-xs);
+  background: var(--scrim-badge);
+  color: var(--on-scrim);
+}
+.dur { right: 8px; bottom: 8px; font: var(--text-stat-sm); }
+.tag { left: 8px; top: 8px; display: flex; align-items: center; gap: 5px; font: var(--text-caption); font-weight: var(--weight-strong); }
+.tag.rec::before { content: ""; width: 8px; height: 8px; border-radius: var(--r-full); background: var(--jewel-ruby); box-shadow: var(--glow-ruby); }
+.tag svg.i { width: 14px; height: 14px; stroke: var(--c, var(--text-2)); }
+.tag svg.ev { width: 16px; height: 16px; }
+.hover-play {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transition: opacity var(--dur-1) var(--ease-standard);
+}
+.hover-play span { display: grid; place-items: center; width: 46px; height: 46px; border-radius: var(--r-full); background: var(--scrim-badge-soft); box-shadow: inset 0 1px 0 var(--line); }
+.hover-play svg { width: 18px; height: 18px; fill: var(--on-scrim); stroke: none; margin-left: 2px; }
+.card:hover .hover-play { opacity: 1; }
+.card-actions { position: absolute; top: 8px; right: 8px; display: flex; gap: 6px; opacity: 0; transition: opacity var(--dur-1) var(--ease-standard); }
+.card:hover .card-actions { opacity: 1; }
+.card-actions button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: var(--r-sm);
+  border: 0;
+  background: var(--scrim-badge);
+  color: var(--on-scrim);
+}
+.card-actions button:hover { background: var(--bg-pad); box-shadow: var(--shadow-pad); color: var(--text-1); }
+.card-actions button.del:hover { background: var(--face-danger); color: var(--on-accent); }
+.card-body { padding: 10px 12px 12px; }
+.card-title { font: var(--text-body-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card-meta { margin-top: 2px; font: var(--text-caption); color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.empty {
+  max-width: 520px;
+  margin: 70px auto;
+  text-align: center;
+  color: var(--text-2);
+}
+.empty h2 { margin: 0 0 8px; color: var(--text-1); font: var(--text-title); letter-spacing: var(--title-track); }
+.empty p { margin: 0 0 18px; }
+.keys { display: grid; gap: 8px; max-width: 380px; margin: 0 auto 22px; text-align: left; }
+.keys div { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-radius: var(--r-md); background: var(--bg-pad); box-shadow: var(--shadow-pad); color: var(--text-1); font-weight: var(--weight-semibold); }
+
+/* ------------------------------------------------------------------ settings */
+
+/* Two panes: the sections, then the chosen one. One column when the window is narrow (below
+   1100 px the rows would squeeze their descriptions into a thin column next to the controls). */
+.settings { display: grid; grid-template-columns: 232px minmax(0, 1fr); min-height: 100%; }
+.set-nav { position: sticky; top: 0; align-self: start; display: flex; flex-direction: column; gap: 2px; padding: 24px 12px 24px 24px; }
+.set-nav h1 { margin: 0 0 16px 10px; font: var(--text-title); letter-spacing: var(--title-track); }
+.set-nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: var(--row-h);
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text-2);
+  font: var(--text-body);
+  font-weight: var(--weight-semibold);
+  text-align: left;
+  transition: background-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
+}
+.set-nav-item:hover { background: color-mix(in srgb, var(--bg-pad) 70%, transparent); color: var(--text-1); }
+.set-nav-item.active { background: var(--bg-pad); box-shadow: var(--shadow-pad); color: var(--accent-text); font-weight: var(--weight-heavy); }
+.set-nav-item svg.i { flex: none; width: 16px; height: 16px; }
+.set-body { min-width: 0; max-width: 840px; padding: 24px 28px 40px 16px; }
+.set-head { display: flex; align-items: baseline; gap: 10px; min-height: 36px; margin: 4px 0 14px; }
+.set-head h2 { margin: 0; font: var(--text-title); letter-spacing: var(--title-track); }
+.set-head .spacer { flex: 1; }
+.settings .lead { margin: 0 0 18px; color: var(--text-2); }
+.link-btn { padding: 0; border: 0; background: none; color: var(--accent-text); font: var(--text-body); font-weight: var(--weight-strong); }
+.link-btn:hover { text-decoration: underline; }
+.card-s > h3 { margin: 0; padding: 18px 20px 8px; }
+.row.stack { flex-direction: column; align-items: stretch; gap: 10px; }
+.row.stack .ctl { flex: 1; }
+.row .val { color: var(--text-2); font-weight: var(--weight-semibold); }
+.checklist { display: flex; flex-wrap: wrap; gap: 8px; }
+.chk { display: inline-flex; align-items: center; gap: 8px; height: var(--control-h-sm); padding: 0 12px 0 10px; border-radius: var(--r-sm); background: transparent; color: var(--text-2); font-weight: var(--weight-semibold); transition: background-color var(--dur-1) var(--ease-out), box-shadow var(--dur-1) var(--ease-out); }
+.chk:hover { background: var(--bg-pad); box-shadow: var(--shadow-pad); color: var(--text-1); }
+.chk:has(input:checked) { background: var(--bg-pad); box-shadow: var(--shadow-pad); color: var(--text-1); font-weight: var(--weight-strong); }
+@media (max-width: 1100px) {
+  .settings { grid-template-columns: minmax(0, 1fr); }
+  .set-nav { position: static; flex-flow: row wrap; padding: 18px 16px 0; }
+  .set-nav h1 { flex-basis: 100%; margin-left: 4px; }
+  .set-body { padding: 8px 16px 32px; }
+}
+.saved-pill { margin-left: 10px; font: var(--text-caption); color: var(--success); opacity: 0; transition: opacity var(--dur-2) var(--ease-standard); }
+.saved-pill.show { opacity: 1; }
+
+/* Settings cards: one pad each with a small-caps title; flat rows inside, hairlines between */
+.card-s { margin-bottom: 22px; border-radius: var(--r-lg); background: var(--bg-pad); box-shadow: var(--shadow-pad); }
+.card-s > h2 { margin: 0; padding: 18px 20px 8px; }
+.row { display: flex; align-items: center; gap: 24px; min-height: 60px; padding: 12px 20px; border-top: 1px solid var(--line-subtle); }
+.card-s > h2 + .row, .card-s > h3 + .row { border-top-color: transparent; }
+.row .lbl { flex: 1; min-width: 0; }
+.row .lbl > b { display: block; font: var(--text-body); font-weight: var(--weight-strong); }
+.row .lbl span { display: block; margin-top: 2px; font: var(--text-caption); font-weight: var(--weight-regular); color: var(--text-3); }
+.row .lbl .err { color: var(--danger); }
+.row .ctl { display: flex; align-items: center; gap: 10px; flex: none; }
+.row .ctl select { min-width: 220px; }
+/* A read-only value: sunk on a small screen */
+.path { max-width: 330px; padding: 8px 12px; border-radius: var(--r-sm); background: var(--bg-screen); box-shadow: var(--shadow-well); font: 12px/16px var(--font-mono); color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; user-select: text; }
+
+/* Switch: a rubber track; on, a flat accent fill; an ivory dome thumb that slides */
+.switch { position: relative; width: 44px; height: 24px; flex: none; appearance: none; margin: 0; border: 0; border-radius: var(--r-full); background: var(--bg-well); box-shadow: var(--shadow-well), inset 0 0 0 1px var(--line-subtle); transition: background-color var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out); }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: var(--r-full); background: var(--ivory); box-shadow: var(--shadow-thumb); transition: transform var(--dur-2) var(--ease-out); }
+.switch:checked { background: var(--accent); box-shadow: inset 0 1px 0 var(--accent-lo), inset 0 1px 3px var(--accent-edge); }
+.switch:checked::after { transform: translateX(20px); }
+.switch:disabled { opacity: 0.5; }
+
+/* Sliders: a rubber groove filled with accent up to the value (--fill, set by app.js) and an
+   ivory thumb that grows a little on hover */
+input[type="range"] { -webkit-appearance: none; appearance: none; height: 20px; margin: 0; background: transparent; outline-offset: 2px; }
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: var(--r-full);
+  background: linear-gradient(90deg, var(--accent) 0 var(--fill, 0%), var(--bg-well) var(--fill, 0%) 100%);
+  box-shadow: var(--shadow-well);
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -5px;
+  border-radius: var(--r-full);
+  background: var(--ivory);
+  box-shadow: var(--shadow-thumb);
+  transition: transform var(--dur-1) var(--ease-out);
+}
+input[type="range"]:hover::-webkit-slider-thumb, input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.12); }
+.range { display: flex; align-items: center; gap: 12px; }
+.range input { width: 200px; }
+.range output { min-width: 64px; text-align: right; font-weight: var(--weight-heavy); color: var(--text-1); }
+
+.hotkey {
+  min-width: 150px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: var(--r-md);
+  border: 0;
+  background: var(--bg-well);
+  box-shadow: var(--shadow-well);
+  font: var(--text-body);
+  font-weight: var(--weight-strong);
+  transition: box-shadow var(--dur-2) var(--ease-standard);
+}
+.hotkey:hover { box-shadow: var(--shadow-well), inset 0 0 0 1px var(--line); }
+.hotkey.capturing { box-shadow: var(--shadow-well), var(--shadow-focus-in); color: var(--accent-text); }
+
+.about { padding: 16px 20px 18px; border-top: 1px solid var(--line-subtle); color: var(--text-2); }
+.about b { color: var(--text-1); }
+
+/* ------------------------------------------------------------------ player */
+
+.player {
+  position: fixed;
+  inset: var(--titlebar-h) 0 0 0; /* below the title bar, which stays draggable */
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-base);
+}
+.player-head { display: flex; align-items: center; gap: 8px; padding: 10px 18px; border-bottom: 1px solid var(--line-subtle); }
+.title-input {
+  min-width: 120px;
+  max-width: 520px;
+  flex: 0 1 520px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: var(--r-md);
+  border: 0;
+  background: transparent;
+  font: var(--text-subtitle);
+  outline: 0;
+  user-select: text;
+  transition: background-color var(--dur-1) var(--ease-out), box-shadow var(--dur-2) var(--ease-standard);
+}
+.title-input:hover { background: var(--bg-well); box-shadow: var(--shadow-well); }
+.title-input:focus { background: var(--bg-well); box-shadow: var(--shadow-well), var(--shadow-focus-in); }
+/* A read-only fact: a sunk chip */
+.chip { padding: 3px 9px; border-radius: var(--r-sm); background: var(--bg-well); box-shadow: var(--shadow-well); color: var(--text-2); font: var(--text-caption); font-weight: var(--weight-strong); white-space: nowrap; }
+.meta { color: var(--text-3); font: var(--text-caption); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.spacer { flex: 1; }
+.drag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: var(--control-h-sm);
+  padding: 0 12px;
+  border-radius: var(--r-sm);
+  border: 1px dashed var(--line-strong);
+  color: var(--text-2);
+  font: var(--text-button);
+  cursor: grab;
+  white-space: nowrap;
+}
+.drag-chip:hover { background: var(--bg-pad); color: var(--text-1); border-color: var(--text-3); }
+
+.stage { position: relative; flex: 1; min-height: 0; }
+/* The clip player: the video with a rail beside it (the minimap, input stats and keyboard
+   controls; the keyboard itself floats on the video), then the timeline and one tool row. */
+.player-main { flex: 1; min-height: 0; display: flex; }
+.player-main > .stage { min-width: 0; }
+.player-rail { flex: none; width: clamp(240px, 22vw, 340px); min-height: 0; overflow-y: auto; padding: 16px 18px 16px 0; -webkit-mask-image: var(--fade-y); mask-image: var(--fade-y); }
+.player-rail .inputs { display: flex; flex-direction: column; align-items: stretch; gap: 14px; margin: 0; }
+.player-rail .map-slot, .player-rail .inputs-info { justify-self: stretch; }
+.player-rail .map-guide { width: 100%; height: auto; }
+.player-rail .kb-controls { flex-wrap: wrap; }
+.stage video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; outline: 0; }
+/* The clip player's video sits in a black frame with its controls on it, like any media player. */
+.player-main > .stage { margin: 16px; border-radius: var(--r-md); overflow: hidden; background: var(--video-bg); box-shadow: var(--shadow-art), 0 0 0 1px var(--line-subtle); }
+.stage.idle { cursor: none; }
+
+/* ---- controls on the video: seek bar over one row of buttons, on a flat translucent shade */
+.vc {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 6;
+  padding: 2px 12px 4px;
+  background: var(--vc-shade);
+  color: var(--vc-fg);
+  transition: opacity var(--dur-2) var(--ease-standard);
+}
+.stage.idle .vc { opacity: 0; pointer-events: none; }
+.vc-scrub { --h: 4px; position: relative; height: 18px; display: flex; align-items: center; touch-action: none; outline: 0; cursor: pointer; }
+.vc-scrub:hover, .vc-scrub.dragging, .vc-scrub:focus-visible { --h: 6px; }
+.vc-rail { position: relative; flex: 1; height: var(--h); border-radius: var(--r-full); background: var(--vc-groove); box-shadow: var(--vc-groove-shadow); transition: height var(--dur-1) var(--ease-out); }
+.vc-fill, .vc-hover, .vc-trim { position: absolute; top: 0; bottom: 0; left: 0; border-radius: inherit; pointer-events: none; }
+.vc-fill { width: 0; background: var(--vc-gloss); box-shadow: var(--vc-fill-glow); }
+.vc-hover { width: 0; background: var(--vc-rail-hover); opacity: 0; }
+.vc-scrub.hovering .vc-hover { opacity: 1; }
+.vc-trim { background: color-mix(in srgb, var(--accent) 35%, transparent); outline: 1px solid color-mix(in srgb, var(--accent-hi) 80%, transparent); }
+.vc-ticks i { position: absolute; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: var(--r-full); background: var(--c); box-shadow: 0 0 0 1.5px var(--vc-outline); pointer-events: none; }
+/* The knob is ivory, like quickRS's thumbs */
+.vc-knob { position: absolute; top: 50%; left: 0; width: 15px; height: 15px; margin: -7.5px 0 0 -7.5px; border-radius: var(--r-full); background: var(--ivory); box-shadow: var(--knob-ring); transform: scale(0); transition: transform var(--dur-1) var(--ease-out); pointer-events: none; }
+.vc-scrub:hover .vc-knob, .vc-scrub.dragging .vc-knob, .vc-scrub:focus-visible .vc-knob, .stage.paused .vc-knob { transform: scale(1); }
+.vc-scrub:focus-visible .vc-rail { outline: 2px solid var(--focus-ring); outline-offset: 3px; }
+/* The time under the pointer: a small pad plate */
+.vc-tip {
+  position: absolute; bottom: 22px; left: 0; transform: translateX(-50%);
+  padding: 3px 8px; border-radius: var(--r-sm); background: var(--vc-tip-bg); box-shadow: 0 2px 6px var(--vc-outline), inset 0 1px 0 var(--vc-btn-hover); color: var(--vc-fg);
+  font: var(--text-stat-sm); white-space: nowrap; pointer-events: none; opacity: 0;
+}
+.vc-scrub.hovering .vc-tip { opacity: 1; }
+.vc-row { display: flex; align-items: center; gap: 2px; height: 40px; }
+.vc-btn {
+  width: 36px; height: 36px; flex: none; display: grid; place-items: center; padding: 0;
+  border: 0; border-radius: var(--r-sm); background: transparent; color: var(--vc-fg);
+  transition: background-color var(--dur-1) var(--ease-out), box-shadow var(--dur-1) var(--ease-out);
+}
+.vc-btn:hover { background: var(--vc-btn-hover); box-shadow: inset 0 1px 0 var(--vc-btn-hover); }
+.vc-btn:active { background: var(--vc-rail); }
+.vc-btn:focus-visible, .vc-select:focus-visible, .vc-slider:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+.vc-btn svg.i { width: 20px; height: 20px; stroke-width: 2px; }
+.vc-btn[data-act="play"] svg.i { fill: currentColor; }
+.vc-vol { display: flex; align-items: center; }
+.vc-slider { width: 0; opacity: 0; margin: 0; transition: width var(--dur-2) var(--ease-out), opacity var(--dur-2) var(--ease-out), margin var(--dur-2) var(--ease-out); }
+.vc-slider::-webkit-slider-runnable-track { height: 4px; background: linear-gradient(90deg, var(--vc-fg) 0 var(--fill, 100%), var(--vc-rail) var(--fill, 100%) 100%); box-shadow: none; }
+.vc-slider::-webkit-slider-thumb { width: 12px; height: 12px; margin-top: -4px; box-shadow: var(--shadow-thumb), 0 0 0 1px var(--vc-outline); }
+.vc-vol:hover .vc-slider, .vc-slider:focus-visible, .vc-slider:active { width: 80px; opacity: 1; margin: 0 8px 0 2px; }
+.vc-time { margin-left: 8px; color: var(--vc-fg); font: var(--text-stat-sm); white-space: nowrap; }
+.vc-select {
+  height: 30px; margin: 0 2px; padding: 0 24px 0 8px; border: 0; border-radius: var(--r-sm); box-shadow: none;
+  background-color: transparent; color: var(--vc-fg); font: var(--text-caption); font-weight: var(--weight-strong);
+  background-position: right 6px center;
+}
+.vc-select:hover { background-color: var(--vc-btn-hover); }
+.vc-select option { background: var(--bg-float); color: var(--text-1); }
+
+/* ---- the edit panel under the video: moments, a trim lane on a dark screen, one tool row */
+.editbar { padding: 12px 18px 14px; border-top: 1px solid var(--line-subtle); background: var(--bg-base); }
+/* --tl-h: groove height, --pin: event symbol size; both follow the panel resizer.
+   Top to bottom: event tokens on stems, the etched time ruler (.tl-ruler), then the groove: a dark
+   recessed screen with sprocket strips along its top and bottom. The match's film strip (.tl-strip,
+   when its frames are ready) sits between the sprockets, under the dimmed ends, the lit band, the
+   grips and the playhead. Without it the groove is the plain textured screen. */
+.timeline {
+  --pin: clamp(20px, calc(var(--tl-h, 46px) * 0.5), 26px);
+  --lane: 0px;
+  --ruler: 14px;
+  --gt: calc(var(--lane) + var(--ruler));   /* the groove's top */
+  --sprocket: 6px;
+  position: relative;
+  isolation: isolate;
+  height: calc(var(--tl-h, 46px) + var(--lane) + var(--ruler));
+  margin: 2px 6px 12px;
+  cursor: text;
+  touch-action: none;
+}
+.timeline.has-markers { --lane: calc(var(--pin) + 6px); }
+.tl-track { position: absolute; z-index: -1; top: var(--gt); bottom: 0; left: 0; right: 0; border-radius: var(--r-sm); overflow: hidden; background: var(--lane-face), var(--lane-bg); box-shadow: var(--lane-shadow); }
+.tl-track::before, .tl-track::after { content: ""; position: absolute; left: 0; right: 0; height: var(--sprocket); background: var(--sprockets); }
+.tl-track::before { top: 0; }
+.tl-track::after { bottom: 0; }
+.tl-strip { position: absolute; top: calc(var(--gt) + var(--sprocket)); bottom: var(--sprocket); left: 0; right: 0; background-repeat: no-repeat; background-size: 100% 100%; opacity: 0.85; pointer-events: none; }
+.tl-ruler { position: absolute; top: var(--lane); left: 0; right: 0; height: var(--ruler); pointer-events: none; }
+.tl-ruler i { position: absolute; bottom: 2px; width: 1px; height: 3px; background: var(--lane-tick); }
+.tl-ruler i.mj { height: 7px; background: var(--lane-tick-major); }
+.tl-ruler span { position: absolute; top: -1px; margin-left: 4px; color: var(--text-3); font: var(--text-tick); white-space: nowrap; }
+/* Outside the kept range: dimmed */
+.tl-dim { position: absolute; top: var(--gt); bottom: 0; background: var(--lane-dim); border-radius: var(--r-sm); pointer-events: none; }
+/* The kept range: a lit glass band with accent edges */
+.tl-sel { position: absolute; top: var(--gt); bottom: 0; border-top: 2px solid var(--accent-hi); border-bottom: 2px solid var(--accent-hi); background: var(--lane-band); box-shadow: var(--lane-band-edge); pointer-events: none; }
+/* Trim grips: knurled accent keys with a bevel, just outside the band so they bracket it */
+.tl-handle {
+  position: absolute;
+  top: calc(var(--gt) - 1px);
+  bottom: -1px;
+  width: 12px;
+  background: var(--grip-face);
+  box-shadow: var(--grip-bevel);
+  cursor: ew-resize;
+  z-index: 2;
+  transition: filter var(--dur-1) var(--ease-out), box-shadow var(--dur-1) var(--ease-out);
+}
+/* a wider grab area than the grip you see */
+.tl-handle::before { content: ""; position: absolute; top: -4px; bottom: -4px; left: -5px; right: -5px; }
+.tl-handle[data-h="start"] { margin-left: -12px; border-radius: var(--r-sm) 2px 2px var(--r-sm); }
+.tl-handle[data-h="end"] { margin-left: 0; border-radius: 2px var(--r-sm) var(--r-sm) 2px; }
+.tl-handle:hover { filter: brightness(1.12); }
+.tl-handle:active { box-shadow: var(--grip-press); filter: brightness(0.96); }
+/* The playhead: a bright hairline with a faint glow and a small ivory pentagon cap */
+.tl-playhead { position: absolute; top: calc(var(--gt) - 9px); bottom: 0; width: 2px; margin-left: -1px; background: var(--playhead); pointer-events: none; z-index: 3; box-shadow: var(--playhead-glow); }
+.tl-playhead::before { content: ""; position: absolute; top: 0; left: 50%; width: 11px; height: 10px; margin-left: -5.5px; background: var(--ivory); clip-path: polygon(0 0, 100% 0, 100% 55%, 50% 100%, 0 55%); }
+/* Recorded input: Wooting 80HE + mouse (colours from rock_mod_arp's keymap picture). The
+   colours (--kb-*) live in tokens.css and the heatmap switch on #player (.kb-heat), because
+   the keyboard can be moved out of the panel into the overlay on the video. */
+
+/* Bottom review panel: [match minimap] [keyboard + mouse, centred] [stats + controls] */
+.inputs { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 18px; margin: 0 6px 12px; }
+.map-slot { grid-column: 1; justify-self: end; min-width: 0; }
+.kb-group { grid-column: 2; display: flex; align-items: center; gap: 14px; min-width: 0; }
+.inputs-info { grid-column: 3; justify-self: start; }
+.inputs.collapsed .kb-group { display: none; }
+.inputs.collapsed .inputs-info, .inputs.overlaid .inputs-info { grid-column: 2; justify-self: center; }
+.inputs.no-kb .map-slot { grid-column: 2; justify-self: center; }
+
+/* The match's minimap beside the keyboard, synced with the clip */
+.map-guide { position: relative; display: block; padding: 0; height: clamp(110px, calc(var(--kb-h, 210px) * 0.95), 420px); aspect-ratio: 1; border-radius: var(--r-md); border: 0; background: var(--bg-stage); box-shadow: var(--shadow-art), 0 0 0 1px var(--line-subtle); overflow: hidden; transition: box-shadow var(--dur-1) var(--ease-out), transform var(--dur-1) var(--ease-out); }
+.map-guide:hover { transform: translateY(-1px); box-shadow: var(--shadow-art), 0 0 0 1px var(--line-strong); }
+.map-guide video { width: 100%; height: 100%; object-fit: contain; display: block; pointer-events: none; }
+.map-guide span { position: absolute; left: 8px; top: 8px; display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: var(--r-xs); background: var(--scrim-badge); color: var(--on-scrim); font: var(--text-caption); font-weight: var(--weight-strong); }
+.map-guide span svg { width: 12px; height: 12px; }
+.kb-case { flex: none; width: calc(var(--kb-h, 210px) * 17.25 / 6.35 + 16px); max-width: calc(100vw - 680px); padding: 8px; border-radius: var(--r-md); background: var(--kb-case); box-shadow: var(--shadow-well); container-type: inline-size; }
+.kb-board { position: relative; aspect-ratio: 17.25 / 6.35; }
+.kb-key { position: absolute; }
+.cap {
+  position: absolute;
+  inset: 1.5px;
+  padding: 0.3cqw 0.6cqw;
+  border-radius: var(--r-xs);
+  border: 1px solid var(--kb-edge);
+  border-bottom-width: 2px;
+  background: var(--kb-key);
+  color: var(--kb-text);
+  font: 700 1.9cqw/1.15 var(--font-ui); /* keycap labels scale with the board */
+  white-space: nowrap;
+  overflow: hidden;
+  transition: background-color var(--dur-1) var(--ease-out), border-color var(--dur-1) var(--ease-out);
+}
+.cap.small { font-size: 1.4cqw; font-weight: 700; }
+.cap i { display: none; position: absolute; right: 0.5cqw; bottom: 0.2cqw; font: 700 1.45cqw var(--font-ui); font-style: normal; }
+.kb-heat .cap i { display: block; }
+.kb-heat .cap:not(.used) { opacity: 0.5; }
+.kb-heat .cap.used { background: color-mix(in srgb, var(--kb-heat) calc(var(--heat) * 85% + 15%), var(--kb-key)); color: var(--on-accent); }
+.cap.on { background: var(--face-accent) !important; border-color: var(--accent-edge); color: var(--on-accent); opacity: 1 !important; box-shadow: 0 0 8px var(--accent-glow); }
+.cap.mini { position: relative; inset: auto; display: inline-grid; place-items: center; min-width: 28px; height: 24px; padding: 0 6px; font-size: 12px; }
+.cap.mini i { right: 2px; bottom: 0; font-size: 8px; }
+
+/* The mouse scales with the keyboard */
+.mouse { flex: none; height: clamp(56px, calc(var(--kb-h, 210px) * 0.45), 220px); width: auto; aspect-ratio: 64 / 100; }
+.mouse .body { fill: var(--kb-case); stroke: var(--kb-edge); }
+.mouse .btn { fill: var(--kb-key); stroke: var(--kb-edge); stroke-width: 1; transition: fill var(--dur-1) var(--ease-out); }
+.kb-heat .mouse .btn.used { fill: color-mix(in srgb, var(--kb-heat) calc(var(--heat) * 85% + 15%), var(--kb-key)); }
+.mouse .btn.on { fill: var(--accent) !important; stroke: var(--kb-lit); }
+
+.inputs-info { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+
+.kb-head-btn.on { font-weight: var(--weight-heavy); }
+
+/* Keyboard floating over the video: faded, draggable, resizable from the corner */
+.kb-overlay { position: absolute; z-index: 6; min-width: 220px; opacity: var(--ov-opacity, 0.8); cursor: move; touch-action: none; transition: opacity var(--dur-2) var(--ease-standard); }
+.kb-overlay:hover, .kb-overlay.dragging { opacity: 1; }
+.kb-overlay .kb-group { width: 100%; gap: 1.5%; }
+.kb-overlay .kb-case { flex: 1; width: auto; max-width: none; padding: 1%; background: color-mix(in srgb, var(--kb-case) 62%, transparent); box-shadow: none; }
+.kb-overlay .mouse { height: auto; width: 9%; min-width: 22px; }
+.ov-bar { position: absolute; left: 0; right: 0; bottom: 100%; display: flex; justify-content: flex-end; gap: 6px; padding-bottom: 6px; opacity: 0; transition: opacity var(--dur-2) var(--ease-standard); cursor: default; }
+.kb-overlay:hover .ov-bar, .kb-overlay.dragging .ov-bar { opacity: 1; }
+.ov-chip { display: inline-flex; align-items: center; gap: 8px; height: 28px; padding: 0 10px; border-radius: var(--r-sm); border: 0; background: var(--vc-tip-bg); box-shadow: 0 2px 6px var(--vc-outline); color: var(--vc-fg-2); font: var(--text-caption); font-weight: var(--weight-strong); }
+.ov-chip input { width: 84px; }
+button.ov-chip:hover { color: var(--vc-fg); }
+.ov-resize { position: absolute; right: -7px; bottom: -7px; width: 16px; height: 16px; border-radius: var(--r-xs); border: 2px solid var(--bg-stage); background: var(--face-accent); cursor: nwse-resize; opacity: 0; transition: opacity var(--dur-2) var(--ease-standard); }
+.kb-overlay:hover .ov-resize, .kb-overlay.dragging .ov-resize { opacity: 1; }
+.input-stats { color: var(--text-2); }
+.input-stats b { color: var(--text-1); font-weight: var(--weight-heavy); }
+.other-keys { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; font: var(--text-caption); }
+.other-keys:empty { display: none; }
+.muted { color: var(--text-3); }
+.kb-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+/* Segmented control: a rubber track; the chosen option is a pad with a lit LED and a heavier label */
+.seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: var(--r-md); background: var(--bg-well); box-shadow: var(--shadow-well); }
+.seg button { display: inline-flex; align-items: center; gap: 7px; height: 26px; padding: 0 11px; border: 0; border-radius: var(--r-sm); background: transparent; color: var(--text-3); font: var(--text-button); font-weight: var(--weight-semibold); white-space: nowrap; transition: color var(--dur-1) var(--ease-out), background-color var(--dur-1) var(--ease-out); }
+.seg button:hover { color: var(--text-1); }
+.seg button.on { background: var(--bg-pad); box-shadow: var(--shadow-pad); color: var(--text-1); font-weight: var(--weight-heavy); }
+.tl-tick { position: absolute; top: calc(var(--gt) + var(--sprocket)); bottom: var(--sprocket); width: 2px; margin-left: -1px; border-radius: var(--r-full); background: var(--c); opacity: 0.85; pointer-events: none; z-index: 1; }
+/* Event pins: a small symbol on the event colour, a stem down to the lane */
+.tl-pin {
+  position: absolute;
+  top: 0;
+  width: var(--pin);
+  height: var(--pin);
+  margin-left: calc(var(--pin) / -2);
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-xs);
+  border: 0;
+  background: transparent;
+  z-index: 4;
+  transition: transform var(--dur-1) var(--ease-out);
+}
+.tl-pin:hover { transform: translateY(-1px) scale(1.08); }
+.tl-pin::after { content: ""; position: absolute; top: calc(100% + 2px); left: 50%; width: 2px; height: calc(var(--lane) - var(--pin) + var(--ruler) - 4px); margin-left: -1px; border-radius: 1px; background: var(--c); opacity: 0.7; }
+.tl-pin svg.ev { width: var(--pin); height: var(--pin); filter: drop-shadow(0 1px 1px var(--vc-outline)); }
+.tl-pin b { position: absolute; top: -6px; right: -8px; min-width: 15px; padding: 0 3px; border-radius: var(--r-full); background: var(--text-1); color: var(--on-marker); font: 800 10px/15px var(--font-numeric); } /* count on a pin: a keycap-sized label */
+
+.player-split { flex: none; height: 10px; margin: -5px 0; position: relative; z-index: 5; cursor: ns-resize; display: grid; place-items: center; touch-action: none; }
+.player-split span { width: 54px; height: 4px; border-radius: var(--r-full); background: var(--line-strong); transition: background-color var(--dur-1) var(--ease-out), width var(--dur-2) var(--ease-out); }
+.player-split:hover span, .player-split.dragging span { width: 90px; background: var(--text-2); }
+/* Moments: small pads with the event symbol, the name and the time; the row scrolls sideways
+   and fades out at its right end */
+.moments { display: flex; flex-wrap: nowrap; gap: 6px; margin: 0 6px 6px; padding: 2px 2px 6px; overflow-x: auto; scrollbar-width: thin; -webkit-mask-image: var(--fade-x); mask-image: var(--fade-x); }
+.moments > * { flex: none; }
+.moment {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 9px 0 7px;
+  border-radius: var(--r-sm);
+  border: 0;
+  background: var(--bg-pad);
+  box-shadow: var(--shadow-pad);
+  color: var(--text-1);
+  font: var(--text-caption);
+  transition: transform var(--dur-1) var(--ease-out), box-shadow var(--dur-1) var(--ease-out);
+}
+.moment:hover { transform: translateY(-1px); box-shadow: var(--shadow-pad-hover); }
+.moment svg.ev { width: 18px; height: 18px; }
+.moment time { color: var(--text-3); font-weight: var(--weight-strong); }
+/* One tool row: [trim readout + trim keys] [save]   ...   [share, copy] [file keys] */
+.edit-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.edit-group { display: inline-flex; align-items: center; gap: 2px; padding: 3px; border-radius: var(--r-md); background: var(--bg-well); box-shadow: var(--shadow-well); }
+.edit-group .btn, .edit-group .icon-btn { height: 28px; }
+.edit-group .icon-btn { width: 30px; }
+.edit-group .btn.ghost:hover:not(:disabled), .edit-group .btn:not(.ghost) { background: var(--bg-pad); box-shadow: var(--shadow-pad); }
+.edit-group .btn:hover:not(:disabled) { transform: none; }
+.edit-group .btn:not(.ghost):hover:not(:disabled) { box-shadow: var(--shadow-pad-hover); }
+/* The trim readout: a small screen; lit text once a range is set */
+.trim-info { display: flex; align-items: center; gap: 7px; height: 28px; margin-right: 4px; padding: 0 10px; border-radius: var(--r-sm); background: var(--bg-screen); color: var(--text-3); font: var(--text-stat-sm); white-space: nowrap; }
+.trim-info svg.i { width: 14px; height: 14px; }
+.trim-info.active { color: var(--accent-text); }
+
+/* ------------------------------------------------------------------ dialog + toasts */
+
+/* Dialogs float as frosted glass over a dimmed, blurred page. A tall one (Report a bug with its
+   diagnostics open) scrolls inside the window instead of running off it. */
+.dialog-backdrop { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; background: var(--scrim); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+.dialog { width: 400px; max-height: calc(100vh - 32px); overflow-y: auto; padding: 22px; border-radius: var(--r-lg); background: var(--bg-glass); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass); border: 1px solid var(--edge-glass); box-shadow: var(--shadow-dialog); }
+.dialog h3 { margin: 0 0 8px; font: var(--text-subtitle); font-weight: var(--weight-heavy); }
+.dialog p { margin: 0 0 20px; color: var(--text-2); }
+.dialog .buttons { display: flex; justify-content: flex-end; gap: 8px; }
+
+/* Toasts: a raised pad */
+.toasts { position: fixed; right: 16px; bottom: 16px; z-index: 50; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; pointer-events: none; }
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 360px;
+  max-width: calc(100vw - 32px);
+  min-height: 46px;
+  padding: 8px 8px 8px 14px;
+  pointer-events: auto;
+  border-radius: var(--r-lg);
+  background: var(--bg-float);
+  border: 1px solid var(--edge-glass);
+  box-shadow: var(--shadow-toast);
+  font-weight: var(--weight-semibold);
+  animation: toast-in var(--dur-2) var(--ease-out);
+}
+.toast .spinner { flex: none; }
+.toast .ticon { flex: none; display: inline-flex; color: var(--text-2); }
+.toast .ticon svg.i { width: 16px; height: 16px; }
+.toast.ok .ticon { color: var(--success); }
+.toast.warn .ticon { color: var(--warning); }
+.toast.error .ticon { color: var(--danger); }
+.toast.rec .ticon { color: var(--rec); }
+.toast .ttext { flex: 1; min-width: 0; overflow-wrap: anywhere; white-space: pre-line; }
+.toast-act {
+  flex: none;
+  height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: var(--bg-pad);
+  box-shadow: var(--shadow-pad);
+  color: var(--accent-text);
+  font: var(--text-button);
+}
+.toast-act:hover { box-shadow: var(--shadow-pad-hover); color: var(--text-1); }
+.toast-x { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: var(--r-sm); background: transparent; color: var(--text-2); }
+.toast-x:hover { background: var(--bg-pad); box-shadow: var(--shadow-pad); color: var(--text-1); }
+.toast-x svg.i { width: 14px; height: 14px; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(6px); } }
+
+/* ------------------------------------------------------------------ editing jobs, menus */
+
+.job-pill { display: flex; align-items: center; gap: 10px; min-width: 0; max-width: 360px; height: var(--control-h-sm); padding: 0 12px; border-radius: var(--r-sm); background: var(--bg-pad); box-shadow: var(--shadow-pad); font: var(--text-caption); }
+.job-pill .jl { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Progress: a groove with an accent pill */
+.job-pill .bar { flex: none; width: 80px; height: 6px; padding: 1px; border-radius: var(--r-full); background: var(--bg-well); box-shadow: var(--shadow-well); overflow: hidden; }
+.job-pill .bar i { display: block; height: 100%; border-radius: var(--r-full); background: var(--accent-hi); transition: width var(--dur-3) var(--ease-out); }
+.job-pill b { color: var(--text-2); font-weight: var(--weight-heavy); }
+
+.popover { position: fixed; z-index: 45; min-width: 250px; padding: 6px; border-radius: var(--r-md); background: var(--bg-glass); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass); border: 1px solid var(--edge-glass); box-shadow: var(--shadow-flyout); }
+.pop-title { padding: 8px 10px 6px; }
+.pop-item { display: flex; flex-direction: column; align-items: flex-start; width: 100%; padding: 7px 10px; border: 0; border-radius: var(--r-sm); background: transparent; text-align: left; }
+.pop-item:hover:not(:disabled) { background: var(--bg-pad); box-shadow: var(--shadow-pad); }
+.pop-item:disabled, .pop-item:disabled span { color: var(--text-disabled); }
+.pop-item b { font: var(--text-body-strong); }
+.pop-item span { font: var(--text-caption); color: var(--text-3); }
+.pop-field { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 4px 4px 2px; padding: 8px 6px 2px; border-top: 1px solid var(--line); font: var(--text-caption); color: var(--text-2); }
+.pop-field select { height: 30px; min-width: 140px; font: var(--text-body); font-weight: var(--weight-semibold); }
+
+.dialog.wide { width: 520px; }
+.shortcuts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 18px; margin: 4px 0 20px; }
+.shortcuts div { display: flex; align-items: center; gap: 10px; color: var(--text-2); }
+.shortcuts kbd { min-width: 64px; text-align: center; color: var(--text-1); }
+
+/* ------------------------------------------------------------------ library additions */
+
+.quota { margin-bottom: 6px; }
+.quota .bar { height: 6px; margin: 4px 0 6px; padding: 1px; border-radius: var(--r-full); background: var(--bg-well); box-shadow: var(--shadow-well); overflow: hidden; }
+.quota .bar i { display: block; height: 100%; border-radius: var(--r-full); background: var(--accent-hi); }
+.quota.full .bar i { background: var(--warning); }
+
+.card.selected { outline: 2px solid var(--accent-text); outline-offset: 2px; }
+.sel-box { position: absolute; left: 8px; bottom: 8px; display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border-radius: var(--r-sm); border: 2px solid var(--on-scrim); background: var(--scrim-badge); color: transparent; opacity: 0; transition: opacity var(--dur-1) var(--ease-standard); }
+.sel-box svg.i { width: 14px; height: 14px; }
+.card:hover .sel-box, .lib-head.selecting ~ .lib-body .sel-box { opacity: 1; }
+.card.selected .sel-box { opacity: 1; background: var(--face-accent); border-color: var(--accent-hi); color: var(--on-accent); }
+.card-actions button.on { color: var(--c-bookmark); }
+.fav-mark { display: inline-flex; vertical-align: -2px; margin-right: 5px; color: var(--c-bookmark); }
+.fav-mark svg.i { width: 14px; height: 14px; }
+.card-meta .champ { width: 16px; height: 16px; margin: 0 6px -3px 0; border-radius: var(--r-full); }
+.kda { position: absolute; left: 8px; bottom: 8px; display: flex; align-items: center; gap: 6px; padding: 2px 8px 2px 3px; border-radius: var(--r-xs); background: var(--scrim-badge); font: var(--text-stat-sm); color: var(--on-scrim); }
+.kda img { width: 20px; height: 20px; border-radius: var(--r-full); }
+.kda.win { box-shadow: inset 0 0 0 1px var(--c-victory); }
+.kda.loss { box-shadow: inset 0 0 0 1px var(--c-defeat); }
+.card:hover .kda, .lib-head.selecting ~ .lib-body .kda { left: 40px; }
+
+.lib-head { flex-wrap: wrap; }
+.selbar { flex-basis: 100%; display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 16px; border-radius: var(--r-md); background: var(--bg-pad); box-shadow: var(--shadow-pad), inset 0 0 0 1px var(--accent-subtle); font-weight: var(--weight-strong); }
+
+/* ------------------------------------------------------------------ player additions */
+
+.fav-btn.on { color: var(--c-bookmark); }
+.nav-videos { display: flex; align-items: center; gap: 2px; padding-left: 8px; border-left: 1px solid var(--line); }
+.icon-btn:disabled { color: var(--text-disabled); background: transparent; box-shadow: none; }
+.icon-btn.sm { width: 30px; height: 30px; }
+.icon-btn.danger:hover:not(:disabled) { color: var(--danger); }
+.autoplay { display: inline-flex; align-items: center; gap: 7px; height: 26px; margin-left: 4px; padding: 0 10px; border-radius: var(--r-sm); border: 0; background: transparent; color: var(--text-3); font: var(--text-caption); font-weight: var(--weight-strong); transition: background-color var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out); }
+.autoplay:hover { background: var(--bg-pad); box-shadow: var(--shadow-pad); color: var(--text-1); }
+.autoplay.on { color: var(--text-1); font-weight: var(--weight-heavy); }
+/* Narrow windows: Share and Copy keep their icons (and tooltips), so the row stays one line. */
+@media (max-width: 1360px) {
+  .edit-row .btn-text { display: none; }
+}
+
+/* Legend: which kinds of moment show; a lit symbol is on, a struck-through dim one is off */
+.legend { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; margin: 0 6px 6px; color: var(--text-3); }
+.legend > svg.i { width: 14px; height: 14px; margin-right: 4px; }
+.legend-chip { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 8px 0 6px; border-radius: var(--r-sm); border: 0; background: transparent; color: var(--text-1); font: var(--text-caption); transition: background-color var(--dur-1) var(--ease-out); }
+.legend-chip:hover { background: var(--bg-pad); box-shadow: var(--shadow-pad); }
+.legend-chip svg.ev { width: 16px; height: 16px; }
+.legend-chip b { color: var(--text-3); font-weight: var(--weight-strong); }
+.legend-chip.off { background: transparent; color: var(--text-3); text-decoration: line-through; }
+.legend-chip.off svg.ev { opacity: 0.4; filter: grayscale(1); }
+
+.osd { position: absolute; left: 50%; top: 50%; z-index: 8; transform: translate(-50%, -50%); padding: 10px 18px; border-radius: var(--r-md); background: var(--scrim-badge); color: var(--on-scrim); font: var(--text-subtitle); pointer-events: none; opacity: 0; transition: opacity var(--dur-2) var(--ease-standard); }
+.osd.show { opacity: 1; }
+/* Full screen is the whole player: only the video and its controls show. */
+.player:fullscreen { background: var(--video-bg); }
+.player:fullscreen > :not(.player-main), .player:fullscreen .player-rail { display: none; }
+.player:fullscreen .stage { margin: 0; border-radius: 0; background: var(--video-bg); box-shadow: none; }
+.player:fullscreen .vc { padding: 4px 20px 8px; }
+.player:fullscreen .vc-row { height: 52px; }
+.player:fullscreen .vc-btn { width: 44px; height: 44px; }
+.player:fullscreen .vc-btn svg.i { width: 24px; height: 24px; }
+.player:fullscreen .vc-time, .player:fullscreen .vc-select { font: var(--text-body); font-weight: var(--weight-strong); }
+.player:fullscreen .vc-scrub { height: 22px; }
+
+/* narrow windows: header buttons drop their labels (titles still explain them); at the default
+   1280 px window "Drag to share" is already an icon, so the video's title keeps its room */
+@media (max-width: 1300px) { .drag-chip .lbl { display: none; } }
+@media (max-width: 1100px) { .player-head .lbl { display: none; } }
+/* key caps on keys inside a sunk tool group stand up a little, so they read */
+.edit-group kbd { background: var(--bg-pad); box-shadow: var(--shadow-pad); }

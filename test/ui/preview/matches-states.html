@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ClipVault · Match row states (preview)</title>
+<!-- The Phase 1 states of the match row (like mockups/m1/04-row-states), rendered by the real view
+     modules from fixture items. Render with --full: rows get the width they have in the app. -->
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="../../../src/renderer/css/views/matches.css">
+<link rel="stylesheet" href="preview.css">
+</head>
+<body>
+<div class="pv-sheet" id="sheet"></div>
+<script type="module">
+import { groupLibrary } from '../../../src/renderer/js/lib/group.js';
+import { renderMatchRow, renderMatchPanel, renderMatchList, renderMatchMenu, matchColumns, placeMenu, esc } from '../../../src/renderer/js/views/matches.js';
+import { NOW, REAL_KEY, libraryItems, stateItems } from './matches-data.js';
+
+const sprite = (html) => html.replaceAll('href="icons.svg#', 'href="../../../src/renderer/icons.svg#');
+const { matches } = groupLibrary([...libraryItems(), ...stateItems()]);
+const by = (champion) => matches.find((m) => m.champion === champion);
+const rowOf = (m, opts = {}) => `<div class="mv-view ${matchColumns([m])}"><div class="mv-list">${renderMatchRow(m, { now: NOW, expanded: Boolean(opts.panel) })}${opts.panel ? renderMatchPanel(m, opts.panel) : ''}</div></div>`;
+
+const states = [
+  ['The 17 October match, as library.json has it', 'Champion, result, K/D/A, length and 30 files. That build saved no level, CS or vision, so those cells are left out, not shown as 0.', rowOf(matches.find((m) => m.key === REAL_KEY))],
+  ['A newer build: level, CS and vision', 'The Live Client gives the level, CS rounded down to 10 (shown as ≈) and the vision score. Damage, gold and items arrive with the League client data (Phase 2).', rowOf(by("Kha'Zix")), 'menu'],
+  ['Grouped by time: no minimap', 'Minimap recording was off, so the files have no common link and were grouped by save time. There is no game clock, so the highlights show when they were saved.', rowOf(by('Lillia'), { panel: { family: 'all' } })],
+  ['No full recording', 'Full-match recording was off: the highlights and the minimap are the match. Play match plays the highlights with the minimap in between. ARAM has no vision score.', rowOf(by('Lux'))],
+  ['Stats missing: highlights only', 'Minimap and full recording both off: the post-game stats live on those files, so there is no result or K/D/A. Watch highlights plays them in the player.', rowOf(by('Ahri'))],
+  ['No highlights', 'A short game with nothing to clip: no strip and no expand button.', rowOf(by('Nidalee'))],
+  ['Filter with no results', 'Filters named in the message, with one way out.', renderMatchList({ matches, filter: { champion: "Kha'Zix", mode: 'ARAM' }, now: NOW })],
+];
+
+document.getElementById('sheet').innerHTML = sprite(
+  '<div class="pv-sheet-head"><h1>Match row states</h1><span class="pv-sub">Phase 1 data only. The 17 October match is real; the others are made up the same way.</span></div>'
+  + states.map(([title, text, html, extra], i) => `<section class="pv-state${extra === 'menu' ? ' pv-with-menu' : ''}" data-state="${i}"><div class="pv-state-label"><h2>${i + 1}. ${esc(title)}</h2><p>${esc(text)}</p></div>${html}${extra === 'menu' ? `<div class="pv-menu">${renderMatchMenu(by("Kha'Zix"))}</div>` : ''}</section>`).join(''));
+
+// The ⋯ menu of state 2, opened from its button.
+const section = document.querySelector('[data-state="1"]');
+const btn = section.querySelector('[data-act="match-menu"]');
+const menu = section.querySelector('.pv-menu');
+const s = section.getBoundingClientRect();
+const b = btn.getBoundingClientRect();
+const m = menu.firstElementChild.getBoundingClientRect();
+const at = placeMenu({ x: b.right - m.width, y: b.bottom + 4, width: m.width, height: m.height, viewWidth: innerWidth, viewHeight: 100000 });
+menu.style.left = `${at.left - s.left}px`;
+menu.style.top = `${at.top - s.top}px`;
+</script>
+</body>
+</html>

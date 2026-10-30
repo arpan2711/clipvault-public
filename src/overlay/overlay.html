@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'">
+  <link rel="stylesheet" href="../renderer/css/tokens.css">
+  <style>
+    /* The window is transparent over the game: keep the page's own colour scheme (tokens.css asks
+       for dark, which must never give this window an opaque canvas). */
+    :root { color-scheme: normal; }
+    html, body { margin: 0; background: transparent; overflow: hidden; font-family: var(--font-ui); font-variant-numeric: tabular-nums; }
+    .toast {
+      position: absolute; inset: 6px; display: flex; align-items: center; gap: 12px;
+      padding: 0 16px; border-radius: var(--r-lg); color: var(--text-1);
+      background: color-mix(in srgb, var(--bg-pad) 96%, transparent); border: 1px solid var(--edge-glass);
+      box-shadow: inset 0 1px 0 var(--hi), 0 1px 3px var(--sh);
+      opacity: 0; transform: translateY(-8px);
+      transition: opacity var(--dur-1) var(--ease-in), transform var(--dur-1) var(--ease-in);
+    }
+    .toast.show { opacity: 1; transform: none; transition-duration: var(--dur-2); transition-timing-function: var(--ease-out); }
+    @media (prefers-reduced-motion: reduce) {
+      .toast, .toast.show { transition-duration: 1ms; }
+      .spin { animation: none; }
+    }
+    .badge { flex: none; width: 30px; height: 30px; border-radius: var(--r-full); display: grid; place-items: center; background: var(--bg-well); box-shadow: var(--shadow-well); color: var(--text-1); }
+    .badge svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+    .ok .badge { background: var(--enamel), var(--success); box-shadow: var(--enamel-rim); color: var(--on-marker); }
+    .rec .badge { background: var(--jewel-ruby); box-shadow: var(--glow-ruby); color: var(--on-accent); }
+    .warn .badge { background: var(--enamel), var(--warning); box-shadow: var(--enamel-rim); color: var(--on-marker); }
+    .error .badge { background: var(--enamel), var(--danger); box-shadow: var(--enamel-rim); color: var(--on-marker); }
+    .text { font: var(--text-body-strong); white-space: pre-line; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    .text::first-line { color: var(--text-1); }
+    .spin { animation: spin 1s linear infinite; transform-origin: center; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="toast" id="toast">
+    <div class="badge" id="badge"></div>
+    <div class="text" id="text"></div>
+  </div>
+  <script src="overlay.js"></script>
+</body>
+</html>

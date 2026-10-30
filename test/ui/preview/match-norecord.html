@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ClipVault · Match page (preview: scoreboard, record false)</title>
+<!-- Preview of the match page outside the app (views/match.js + css/views/match.css). Render:
+     node <scratchpad>/tools/render/render.js test/ui/preview/match-norecord.html <out.png> 1440 900 -->
+<link rel="stylesheet" href="../../../src/renderer/css/tokens.css">
+<link rel="stylesheet" href="../../../src/renderer/css/views/matches.css">
+<link rel="stylesheet" href="../../../src/renderer/css/views/match.css">
+<link rel="stylesheet" href="preview.css">
+<style>.pv-content.pv-match { overflow: hidden; }</style>
+</head>
+<body>
+<div class="pv-window">
+  <header class="pv-titlebar">
+    <div class="pv-app"><span class="pv-mark"></span><span>ClipVault</span></div>
+    <div class="pv-search" id="tbSearch">Search matches and clips</div>
+    <span class="pv-grow"></span>
+    <span class="pv-status"><span class="pv-dot"></span>Replay buffer on · last 40 s</span>
+  </header>
+  <aside class="pv-sidebar" id="nav"></aside>
+  <main class="pv-content pv-match" id="page"></main>
+</div>
+<script>window.PV = { tab: 'scoreboard', record: false, at: null };</script>
+<script type="module" src="match-preview.js"></script>
+</body>
+</html>

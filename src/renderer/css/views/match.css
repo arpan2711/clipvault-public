@@ -1,0 +1,378 @@
+/* Match page (js/views/match.js): header, Watch, Scoreboard and Highlights tabs. Ported from the m1
+   mockups (mockups/m1/02-match, 03-scoreboard). Tokens only (css/tokens.css): no colour literals, no
+   font sizes or radii outside the ramp; re-skinned in quickRS's language (pads, wells, screens, LEDs). Every
+   class is mp- prefixed. The Highlights tab reuses the Matches view's panel, so it also needs
+   css/views/matches.css. The page is a size container: below 1140 px the stat line and the charts
+   tighten (the m1 @1280 render). */
+
+.mp-page { box-sizing: border-box; container: mp / inline-size; display: flex; flex-direction: column; height: 100%; min-height: 0; min-width: 0; background: var(--bg-layer); color: var(--text-1); }
+.mp-page * { box-sizing: inherit; }
+.mp-page svg.i {
+  width: var(--icon-sm); height: var(--icon-sm); flex: none; fill: none; stroke: currentColor;
+  stroke-width: var(--icon-stroke); stroke-linecap: round; stroke-linejoin: round;
+}
+.mp-page svg.i.i-md { width: var(--icon-md); height: var(--icon-md); }
+.mp-page button { font: inherit; color: inherit; }
+.mp-page button:disabled { cursor: default; }
+.mp-page img { display: block; }
+.mp-page :focus-visible { outline: var(--focus-width) solid var(--focus-ring); outline-offset: var(--focus-offset); }
+.mp-num { font-variant-numeric: tabular-nums; }
+.mp-grow { flex: 1; }
+.mp-faint { color: var(--text-2); }
+.mp-note { margin: 0; padding: var(--sp-2); font: var(--text-caption); color: var(--text-3); }
+.mp-h2 { margin: 0; font: var(--text-body-strong); color: var(--text-1); }
+.mp-ct { font: var(--text-caption); color: var(--text-3); font-weight: var(--weight-strong); }
+
+/* ---------- Buttons: pads; icon keys flat until hovered ---------- */
+.mp-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); height: var(--control-h);
+  padding: 0 14px; border-radius: var(--r-sm); border: 0; background: var(--bg-pad); box-shadow: var(--shadow-pad);
+  color: var(--text-1); font: var(--text-button); white-space: nowrap;
+  transition: transform var(--dur-1) var(--ease-out), box-shadow var(--dur-1) var(--ease-out), background-color var(--dur-1) var(--ease-out);
+}
+.mp-btn svg.i { color: var(--text-2); }
+.mp-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-pad-hover); }
+.mp-btn:hover svg.i { color: var(--text-1); }
+.mp-btn:active { transform: translateY(1px); box-shadow: var(--shadow-pad-press); }
+.mp-btn.mp-subtle { background: transparent; box-shadow: none; color: var(--text-2); }
+.mp-btn.mp-subtle:hover { background: var(--bg-pad); box-shadow: var(--shadow-pad); color: var(--text-1); transform: none; }
+.mp-btn:disabled, .mp-btn:disabled:hover { transform: none; background: var(--bg-well); box-shadow: var(--shadow-well); color: var(--text-disabled); }
+.mp-btn:disabled svg.i { color: var(--text-disabled); }
+.mp-icon-btn {
+  display: inline-grid; place-items: center; width: var(--control-h); height: var(--control-h); padding: 0; flex: none;
+  border-radius: var(--r-sm); border: 0; background: transparent; color: var(--text-2);
+  transition: background-color var(--dur-1) var(--ease-out), box-shadow var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
+}
+.mp-icon-btn:hover { background: var(--bg-pad); box-shadow: var(--shadow-pad); color: var(--text-1); }
+.mp-icon-btn:active { box-shadow: var(--shadow-pad-press); }
+.mp-icon-btn[aria-pressed="true"] { background: var(--bg-well); box-shadow: var(--shadow-well); color: var(--accent-text); }
+
+/* ---------- Event tokens: forged plates from event-icons.svg (events.js glyphId) ---------- */
+.mp-ev { width: 24px; height: 24px; flex: none; display: inline-block; vertical-align: middle; } /* block, not grid: the svg's 100% height needs a definite box */
+.mp-page .mp-ev svg.ev { width: 100%; height: 100%; }
+.mp-ev.mp-sm { width: 20px; height: 20px; }
+.mp-ev.mp-xs { width: 16px; height: 16px; }
+.mp-ev.mp-mk-ev { width: 20px; height: 20px; }
+.mp-page .mp-mo-tag svg.ev { width: 16px; height: 16px; }
+
+/* ---------- Champion faces (Data Dragon squares cropped to a circle) ---------- */
+.mp-champ-wrap { position: relative; display: inline-block; flex: none; line-height: 0; }
+.mp-face { position: relative; display: inline-block; flex: none; width: 28px; height: 28px; border-radius: var(--r-full); overflow: hidden; background: var(--bg-well); }
+.mp-face img { width: 100%; height: 100%; transform: scale(1.12); }
+.mp-face.mp-face-lg { width: 48px; height: 48px; }
+.mp-face.mp-face-sm { width: 28px; height: 28px; }
+.mp-face.mp-face-xs { width: 16px; height: 16px; }
+.mp-face-ph { display: inline-grid; place-items: center; font: var(--text-caption); color: var(--text-2); line-height: 1; }
+.mp-face-lg.mp-face-ph { font: var(--text-subtitle); }
+.mp-lvl {
+  position: absolute; right: -2px; bottom: -2px; min-width: 18px; height: 18px; padding: 0 var(--sp-1);
+  border-radius: var(--r-full); border: 0; background: var(--bg-screen); box-shadow: 0 0 0 1.5px var(--bg-layer), var(--shadow-well);
+  font: var(--text-stat-sm); line-height: 18px; text-align: center; color: var(--text-1);
+}
+
+/* ---------- Header ---------- */
+.mp-head { flex: none; display: flex; flex-direction: column; gap: var(--sp-4); padding: var(--sp-4) var(--gutter) 0; }
+.mp-top { display: flex; align-items: center; gap: var(--sp-3); min-width: 0; }
+.mp-title { display: flex; flex-direction: column; gap: var(--sp-0-5); min-width: 0; margin-left: var(--sp-1); }
+.mp-name { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
+.mp-h1 { margin: 0; font: var(--text-title); letter-spacing: var(--title-track); color: var(--text-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mp-res {
+  display: inline-flex; align-items: center; height: 20px; padding: 0 7px; flex: none; border-radius: var(--r-xs);
+  background: var(--bg-well); color: var(--text-2); font: var(--text-label); letter-spacing: var(--label-track); text-transform: uppercase;
+}
+.mp-res.mp-win { background: var(--win-tint); color: var(--c-victory); }
+.mp-res.mp-loss { background: var(--loss-tint); color: var(--c-defeat-text); }
+.mp-sub { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; overflow: hidden; font: var(--text-caption); color: var(--text-2); white-space: nowrap; }
+.mp-dot { color: var(--text-disabled); }
+.mp-stats { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
+.mp-hs { display: flex; flex-direction: column; gap: 3px; flex: none; padding: 7px 14px 8px; border-radius: var(--r-md); background: var(--bg-screen); box-shadow: var(--shadow-well); }
+.mp-hs .mp-hl { font: var(--text-label); letter-spacing: var(--label-track); text-transform: uppercase; color: var(--text-3); }
+.mp-hv { display: flex; align-items: baseline; gap: var(--sp-2); font: var(--text-stat); font-variant-numeric: tabular-nums; color: var(--text-1); white-space: nowrap; }
+.mp-hx { font: var(--text-caption); color: var(--text-3); }
+.mp-kda .mp-sep { color: var(--text-3); padding: 0 1px; }
+.mp-kda .mp-d { color: var(--c-death); }
+.mp-items { display: flex; gap: var(--sp-0-5); flex: none; }
+.mp-item { width: 28px; height: 28px; flex: none; border-radius: var(--r-xs); overflow: hidden; background: var(--bg-well); box-shadow: var(--shadow-well); }
+.mp-item img { width: 100%; height: 100%; }
+.mp-items-sm .mp-item { width: 22px; height: 22px; }
+.mp-build { --gi: 22px; }
+.mp-build.mp-build-sm { --gi: 14px; gap: 1px; }
+@container mp (max-width: 1139px) {
+  .mp-stats { gap: var(--sp-2); }
+  .mp-hs { padding: 6px 10px 7px; }
+  .mp-hx { display: none; }
+}
+
+/* ---------- Tabs: a segmented control (a rubber track; the open tab is a pad with a lit LED) ---------- */
+.mp-tabs { flex: none; align-self: flex-start; display: flex; gap: 2px; margin: var(--sp-3) var(--gutter) var(--sp-3); padding: 3px; border-radius: var(--r-md); background: var(--bg-well); box-shadow: var(--shadow-well); }
+.mp-tab {
+  position: relative; display: inline-flex; align-items: center; gap: var(--sp-2); height: 30px; padding: 0 var(--sp-4);
+  border: 0; border-radius: var(--r-sm); background: transparent; font: var(--text-button); font-weight: var(--weight-semibold);
+  transition: color var(--dur-1) var(--ease-out);
+}
+.mp-page .mp-tab { color: var(--text-3); }
+.mp-page .mp-tab:hover, .mp-page .mp-tab.mp-on { color: var(--text-1); }
+.mp-tab.mp-on { background: var(--bg-pad); box-shadow: var(--shadow-pad); font-weight: var(--weight-heavy); }
+.mp-tab.mp-on::before { content: ""; flex: none; width: 7px; height: 7px; border-radius: var(--r-full); background: var(--led); box-shadow: var(--glow-led); }
+.mp-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+
+/* ---------- Watch: player (stage, timeline, controls) + moments pane ---------- */
+.mp-watch { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 320px; }
+.mp-player { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: var(--sp-3); padding: var(--sp-4) var(--sp-6) var(--sp-3); background: var(--bg-base); border-top: 1px solid var(--line-subtle); overflow: hidden; }
+.mp-stage { position: relative; flex: 0 1 auto; width: 100%; aspect-ratio: 16 / 9; min-height: 0; border-radius: var(--r-md); overflow: hidden; background: var(--bg-stage); box-shadow: var(--shadow-art), 0 0 0 1px var(--line-subtle); }
+.mp-stage > video, .mp-poster { display: block; width: 100%; height: 100%; object-fit: cover; }
+.mp-stage > video { object-fit: contain; }
+/* Full screen: the video fills the screen above a band with the timeline and the controls, so
+   they are always there (the page around them stays behind). */
+.mp-player:fullscreen { gap: var(--sp-2); padding: 0 0 var(--sp-2); background: var(--video-bg); }
+.mp-player:fullscreen .mp-stage { flex: 1 1 0; aspect-ratio: auto; border-radius: 0; background: var(--video-bg); box-shadow: none; }
+.mp-player:fullscreen .mp-tl, .mp-player:fullscreen .mp-controls, .mp-player:fullscreen > .mp-note { margin: 0 var(--sp-6); }
+.mp-pip {
+  position: absolute; top: var(--sp-3); right: var(--sp-3); width: 22%; aspect-ratio: 1; border-radius: var(--r-sm); overflow: hidden;
+  border: 0; background: var(--bg-stage); box-shadow: 0 0 0 1px var(--line-strong), var(--shadow-art);
+}
+.mp-pip img, .mp-pip video { width: 100%; height: 100%; object-fit: cover; }
+.mp-now {
+  position: absolute; left: var(--sp-3); top: var(--sp-3); display: inline-flex; align-items: center; gap: var(--sp-2); height: 28px;
+  padding: 0 var(--sp-2) 0 var(--sp-1); border-radius: var(--r-sm); background: var(--scrim-badge); color: var(--on-scrim); font: var(--text-caption);
+}
+.mp-now b { font-weight: var(--weight-strong); }
+
+/* Timeline: glyph markers (grouped under 28 px) above a track with highlight segments */
+.mp-tl { position: relative; flex: none; padding-top: var(--sp-1); user-select: none; }
+.mp-tl-marks { position: relative; height: 28px; }
+.mp-mk { position: absolute; top: 2px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; padding: 0; border: 0; background: transparent; }
+.mp-mk::after { content: ""; width: 2px; height: 6px; border-radius: 1px; background: var(--line-strong); }
+.mp-mk:hover .mp-ev { transform: translateY(-1px); }
+.mp-mk .mp-ev { transition: transform var(--dur-1) var(--ease-out); }
+/* The hover list: the marker's moments with their champions, above the marker, kept inside the
+   timeline at its ends. */
+.mp-mk-card {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  z-index: 6;
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 200px;
+  max-width: 300px;
+  padding: var(--sp-2);
+  border: 1px solid var(--edge-glass);
+  border-radius: var(--r-md);
+  background: var(--bg-float);
+  box-shadow: var(--shadow-flyout);
+  transform: translateX(-50%);
+  text-align: left;
+  pointer-events: none;
+}
+.mp-mk-card.mp-at-start { left: 0; transform: none; }
+.mp-mk-card.mp-at-end { left: auto; right: 0; transform: none; }
+.mp-mk:hover .mp-mk-card, .mp-mk:focus-visible .mp-mk-card { display: flex; }
+.mp-card-row { display: flex; align-items: center; gap: var(--sp-2); min-height: 24px; color: var(--text-1); font: var(--text-caption); white-space: nowrap; }
+.mp-card-l { flex: 1; }
+.mp-card-t { color: var(--text-3); font-variant-numeric: tabular-nums; }
+.mp-card-more { padding: 2px 0 0 22px; color: var(--text-3); font: var(--text-caption); }
+.mp-helpers { display: inline-flex; gap: 1px; margin-right: 2px; }
+.mp-face.mp-face-2xs { width: 12px; height: 12px; }
+/* Bigger faces where the champions are the point: the moments list and the hover cards. */
+.mp-ml .mp-face.mp-face-xs { width: 20px; height: 20px; }
+.mp-ml .mp-face.mp-face-2xs { width: 14px; height: 14px; }
+.mp-mk-card .mp-face.mp-face-xs { width: 24px; height: 24px; }
+.mp-mk-card .mp-face.mp-face-2xs { width: 16px; height: 16px; }
+.mp-mk-card .mp-card-row { min-height: 30px; }
+.mp-mk.mp-dim .mp-ev { opacity: 0.45; }
+.mp-mk-ct {
+  position: absolute; top: -6px; left: 10px; min-width: 16px; height: 16px; padding: 0 var(--sp-1); border-radius: var(--r-full);
+  border: 0; background: var(--text-1); font: var(--text-stat-sm); font-weight: var(--weight-heavy); line-height: 16px; text-align: center; color: var(--bg-layer);
+}
+.mp-tl-track { position: relative; height: 18px; border-radius: var(--r-sm); background: var(--lane-face), var(--lane-bg); box-shadow: var(--lane-shadow); overflow: hidden; cursor: pointer; }
+.mp-tl-track:focus-visible { outline-offset: var(--focus-offset); }
+.mp-played { position: absolute; left: 0; top: 0; bottom: 0; background: var(--lane-band); box-shadow: var(--lane-band-edge); }
+.mp-pre { position: absolute; left: 0; top: 0; bottom: 0; background: var(--lane-dim); border-right: 1px solid var(--lane-tick-major); }
+.mp-seg { position: absolute; top: 4px; bottom: 4px; min-width: 2px; border-radius: 2px; background: var(--lane-tick-major); }
+.mp-seg.mp-dim { background: var(--lane-tick); }
+.mp-seg.mp-cur { background: var(--vc-gloss); }
+.mp-playhead { position: absolute; top: 28px; height: 22px; width: 2px; margin-left: -1px; background: var(--playhead); box-shadow: var(--playhead-glow), 0 0 0 1px var(--vc-outline); pointer-events: none; }
+.mp-knob { position: absolute; top: 33px; width: 14px; height: 14px; margin-left: -7px; border-radius: var(--r-full); background: var(--ivory); box-shadow: var(--knob-ring); pointer-events: none; }
+.mp-tl-axis { position: relative; height: 16px; margin-top: var(--sp-1); font: var(--text-caption); color: var(--text-3); }
+.mp-tl-axis span { position: absolute; transform: translateX(-50%); font: var(--text-tick); }
+
+.mp-controls { flex: none; display: flex; align-items: center; gap: var(--sp-1); height: var(--control-h); }
+.mp-time { margin: 0 var(--sp-2); padding: 0 var(--sp-3); height: 28px; display: inline-flex; align-items: center; border-radius: var(--r-sm); background: var(--bg-screen); box-shadow: var(--shadow-well); font: var(--text-body-strong); font-weight: var(--weight-heavy); font-variant-numeric: tabular-nums; color: var(--text-1); white-space: nowrap; }
+.mp-time .mp-faint { color: var(--text-3); font-weight: var(--weight-semibold); }
+/* A narrow page (the smallest window): a slimmer moments pane, and the controls drop the match
+   length and the Clip label so the minimap and full screen buttons stay in view. */
+@container mp (max-width: 859px) {
+  .mp-watch { grid-template-columns: minmax(0, 1fr) 296px; }
+  .mp-player { padding-left: var(--sp-4); padding-right: var(--sp-4); }
+  .mp-time { margin: 0 var(--sp-1); }
+  .mp-time .mp-faint, .mp-clip-l { display: none; }
+  .mp-head .mp-items { gap: 2px; }
+  .mp-head .mp-items .mp-item { width: 24px; height: 24px; }
+}
+
+/* Moments pane: Highlight mode, then the kill feed */
+.mp-side { min-height: 0; min-width: 0; display: flex; flex-direction: column; border-left: 1px solid var(--line-subtle); background: var(--bg-layer); }
+.mp-hm { flex: none; display: flex; flex-direction: column; gap: var(--sp-2); padding: var(--sp-4) var(--sp-4) var(--sp-3); border-bottom: 1px solid var(--line-subtle); }
+.mp-hm-row { display: flex; align-items: center; gap: var(--sp-2); }
+.mp-hm-desc { margin: 0; font: var(--text-caption); color: var(--text-2); }
+.mp-switch {
+  position: relative; width: 44px; height: 24px; flex: none; padding: 0; border-radius: var(--r-full);
+  border: 0; background: var(--bg-well); box-shadow: var(--shadow-well), inset 0 0 0 1px var(--line-subtle);
+  transition: background-color var(--dur-2) var(--ease-out);
+}
+.mp-switch .mp-thumb { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: var(--r-full); background: var(--ivory); box-shadow: var(--shadow-thumb); transition: left var(--dur-2) var(--ease-out); }
+.mp-switch.mp-on { background: var(--accent); box-shadow: inset 0 1px 0 var(--accent-lo), inset 0 1px 3px var(--accent-edge); }
+.mp-switch.mp-on .mp-thumb { left: 23px; }
+.mp-switch:disabled { opacity: 0.5; }
+.mp-hm-types { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-1); margin-top: var(--sp-1); }
+.mp-tgl {
+  display: inline-flex; align-items: center; gap: var(--sp-2); height: var(--control-h-xs); padding: 0 var(--sp-2) 0 var(--sp-1);
+  border-radius: var(--r-sm); border: 0; background: transparent; font: var(--text-caption);
+  transition: background-color var(--dur-1) var(--ease-out), box-shadow var(--dur-1) var(--ease-out);
+}
+.mp-page .mp-tgl { color: var(--text-3); }
+.mp-page .mp-tgl.mp-on { background: var(--bg-pad); box-shadow: var(--shadow-pad); color: var(--text-1); font-weight: var(--weight-strong); }
+.mp-tgl:hover { background: var(--bg-pad); }
+.mp-tgl:not(.mp-on) .mp-ev { opacity: 0.4; }
+.mp-tgl:not(.mp-on) .mp-tgl-l { text-decoration: line-through; text-decoration-color: var(--text-3); }
+.mp-tgl:disabled, .mp-tgl:disabled:hover { background: transparent; opacity: 0.6; }
+.mp-hm-sum { font: var(--text-caption); color: var(--text-3); }
+.mp-hm-sum b { font-weight: var(--weight-heavy); color: var(--text-1); }
+
+.mp-ml-head { flex: none; display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-3) var(--sp-4) var(--sp-2); }
+.mp-ml { flex: 1; min-height: 0; overflow-y: auto; -webkit-mask-image: var(--fade-y); mask-image: var(--fade-y); display: flex; flex-direction: column; padding: 0 var(--sp-2) var(--sp-3); }
+.mp-mo {
+  display: flex; align-items: center; gap: var(--sp-2); width: 100%; height: 36px; flex: none; padding: 0 var(--sp-2);
+  border: 0; border-radius: var(--r-sm); background: transparent; text-align: left;
+}
+.mp-mo { transition: background-color var(--dur-1) var(--ease-out); }
+.mp-mo:hover { background: color-mix(in srgb, var(--bg-pad) 65%, transparent); }
+.mp-mo.mp-cur { background: var(--bg-pad); box-shadow: var(--shadow-pad); }
+.mp-mo.mp-dim { opacity: 0.45; }
+.mp-tm { width: 36px; flex: none; font: var(--text-stat-sm); color: var(--text-3); }
+.mp-mo.mp-cur .mp-tm { color: var(--accent-text); }
+.mp-lb { flex: 1; min-width: 0; font: var(--text-body); color: var(--text-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mp-mo.mp-end-loss .mp-lb { color: var(--c-defeat-text); }
+.mp-who { display: flex; align-items: center; gap: var(--sp-1); flex: none; }
+.mp-page svg.mp-to { width: 12px; height: 12px; color: var(--text-3); }
+.mp-team-of { font: var(--text-caption); color: var(--text-3); }
+.mp-mo-div { display: flex; align-items: center; gap: var(--sp-2); height: 28px; flex: none; padding: 0 var(--sp-2); }
+.mp-ln { flex: 1; height: 1px; background: var(--c-highlight); opacity: 0.35; }
+.mp-mo-tag {
+  display: inline-flex; align-items: center; gap: var(--sp-1); height: 20px; padding: 0 var(--sp-2); border-radius: var(--r-sm);
+  background: var(--bg-well); box-shadow: var(--shadow-well); color: var(--c-highlight); font: var(--text-caption); font-weight: var(--weight-heavy);
+}
+.mp-page .mp-mo-tag svg.i { width: 12px; height: 12px; }
+.mp-mo-tag .mp-dot { color: var(--text-3); }
+
+/* My moments / All kills */
+.mp-feed { display: inline-flex; flex: none; padding: 3px; gap: 2px; border-radius: var(--r-md); background: var(--bg-well); box-shadow: var(--shadow-well); }
+.mp-feed-b {
+  display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 var(--sp-2); border: 0; border-radius: var(--r-xs); background: transparent;
+  font: var(--text-caption); white-space: nowrap;
+}
+.mp-page .mp-feed-b { color: var(--text-3); }
+.mp-page .mp-feed-b:hover { color: var(--text-1); }
+.mp-page .mp-feed-b.mp-on { background: var(--bg-pad); box-shadow: var(--shadow-pad); color: var(--text-1); font-weight: var(--weight-heavy); }
+.mp-page .mp-feed-b.mp-on::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: var(--r-full); background: var(--led); box-shadow: var(--glow-led); }
+.mp-feed-note { display: flex; align-items: flex-start; gap: var(--sp-2); margin: 0 0 var(--sp-1); }
+.mp-page .mp-feed-note svg.i { margin-top: 1px; }
+
+/* All kills: ally rows blue, enemy rows red (your team's colours), your own kills and deaths stronger. */
+.mp-kf.mp-ally { background: color-mix(in srgb, var(--ally) 10%, transparent); }
+.mp-kf.mp-enemy { background: color-mix(in srgb, var(--enemy) 10%, transparent); }
+.mp-kf.mp-ally.mp-mine { background: var(--win-tint); }
+.mp-kf.mp-enemy.mp-mine { background: var(--loss-tint); }
+.mp-kf + .mp-kf { margin-top: 2px; }
+.mp-kf:hover { background: var(--bg-pad); }
+.mp-kf.mp-cur { background: var(--bg-pad); box-shadow: var(--shadow-pad), inset 0 0 0 1px var(--accent-text); }
+.mp-kf:not(.mp-mine) .mp-lb { color: var(--text-2); }
+.mp-kf.mp-mine .mp-lb { font-weight: var(--weight-strong); }
+.mp-face.mp-face-me { box-shadow: 0 0 0 2px var(--accent-text); }
+.mp-face.mp-face-exec { color: var(--text-2); }
+.mp-page .mp-face-exec svg.i { width: 12px; height: 12px; }
+
+/* ---------- Scoreboard ---------- */
+.mp-sb-page { flex: 1; min-height: 0; overflow: auto; -webkit-mask-image: var(--fade-y); mask-image: var(--fade-y); display: flex; flex-direction: column; gap: var(--sp-5); padding: var(--sp-2) var(--gutter) var(--sp-5); }
+.mp-sb-empty { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-6) 0; font: var(--text-body); color: var(--text-3); }
+.mp-sb-empty p { margin: 0; }
+.mp-sb { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
+.mp-c-role { width: 86px; }
+.mp-c-kda { width: 132px; }
+.mp-c-dmg { width: 236px; }
+.mp-c-gold { width: 88px; }
+.mp-c-cs { width: 64px; }
+.mp-c-vis { width: 64px; }
+.mp-c-items { width: 182px; }
+@container mp (max-width: 1139px) { .mp-c-role { width: 80px; } .mp-c-kda { width: 120px; } .mp-c-dmg { width: 188px; } .mp-c-gold { width: 76px; } .mp-c-cs, .mp-c-vis { width: 56px; } }
+/* The champion column has no set width: on a narrow page it keeps room for a face, the spells and a
+   name (about 160 px; your Riot ID drops out), and the table scrolls sideways instead of squeezing it to nothing. */
+@container mp (max-width: 1139px) { .mp-sb { min-width: 918px; } }
+@container mp (max-width: 999px) { .mp-c-kda { width: 112px; } .mp-c-dmg { width: 150px; } .mp-c-gold { width: 72px; } .mp-c-cs, .mp-c-vis { width: 48px; } .mp-sb { min-width: 842px; } .mp-sb .mp-you { display: none; } }
+.mp-sb th { height: 26px; padding: 0 var(--sp-2); font: var(--text-label); letter-spacing: var(--label-track); text-transform: uppercase; color: var(--text-3); text-align: left; white-space: nowrap; }
+.mp-sb th.mp-r, .mp-sb td.mp-r { text-align: right; }
+.mp-sb td { height: 34px; padding: 0 var(--sp-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-top: 1px solid var(--line-subtle); }
+.mp-sb-team td { height: 36px; border-top: 0; }
+.mp-gap td { height: var(--sp-3); padding: 0; border: 0; }
+.mp-sb-row.mp-me td { background: var(--bg-pad); border-top-color: transparent; }
+.mp-sb-row.mp-me + tr td { border-top-color: transparent; }
+.mp-sb-row.mp-me td:first-child { border-radius: var(--r-sm) 0 0 var(--r-sm); }
+.mp-sb-row.mp-me td:last-child { border-radius: 0 var(--r-sm) var(--r-sm) 0; }
+.mp-role { font: var(--text-label); letter-spacing: var(--label-track); text-transform: uppercase; color: var(--text-3); }
+.mp-pl { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
+.mp-nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mp-pl .mp-nm { flex: none; max-width: 100%; }
+.mp-you { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: var(--text-caption); color: var(--text-2); }
+.mp-v { font-variant-numeric: tabular-nums; font-weight: var(--weight-semibold); color: var(--text-1); }
+.mp-sb .mp-kda { font: var(--text-body-strong); font-weight: var(--weight-heavy); }
+.mp-ratio { margin-left: var(--sp-2); font: var(--text-caption); color: var(--text-3); }
+.mp-dmg { display: flex; align-items: center; gap: var(--sp-3); }
+.mp-dmg .mp-v { width: 52px; flex: none; text-align: right; font-weight: var(--weight-strong); }
+.mp-bar { display: block; flex: 1; height: 8px; padding: 1px; border-radius: var(--r-full); background: var(--bg-well); box-shadow: var(--shadow-well); overflow: hidden; }
+.mp-bar > i { display: block; height: 100%; border-radius: var(--r-full); }
+.mp-bar > i.mp-ally { background: var(--ally); }
+.mp-bar > i.mp-enemy { background: var(--enemy); }
+.mp-team { display: inline-flex; align-items: center; gap: var(--sp-2); font: var(--text-label); letter-spacing: var(--label-track); text-transform: uppercase; }
+.mp-tdot { width: 8px; height: 8px; flex: none; border-radius: var(--r-full); }
+.mp-tdot.mp-ally { background: var(--ally); }
+.mp-tdot.mp-enemy { background: var(--enemy); }
+.mp-tot { font: var(--text-caption); color: var(--text-2); }
+.mp-tot b { margin-right: var(--sp-1); font: var(--text-body-strong); font-weight: var(--weight-heavy); color: var(--text-1); }
+.mp-objs { display: inline-flex; justify-content: flex-end; gap: var(--sp-3); }
+.mp-objstat { display: inline-flex; align-items: center; gap: var(--sp-1); font: var(--text-body-strong); color: var(--text-1); }
+.mp-objstat.mp-zero { color: var(--text-3); }
+.mp-objstat.mp-zero .mp-ev { opacity: 0.45; }
+
+.mp-charts { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: var(--sp-8); }
+@container mp (max-width: 1139px) { .mp-charts { grid-template-columns: minmax(0, 1fr) 280px; gap: var(--sp-6); } }
+.mp-sec-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--sp-3); margin-bottom: var(--sp-2); min-width: 0; }
+.mp-sec-head .mp-h2 { flex: none; white-space: nowrap; }
+.mp-sec-sub { font: var(--text-caption); color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mp-legend { margin-left: auto; display: flex; gap: var(--sp-3); flex: none; font: var(--text-caption); color: var(--text-2); }
+.mp-key { display: inline-flex; align-items: center; gap: var(--sp-2); }
+.mp-sw { width: 12px; height: 2px; border-radius: var(--r-full); }
+.mp-sw-pos { background: var(--ally); }
+.mp-sw-neg { background: var(--enemy); }
+.mp-gold-svg { display: block; width: 100%; height: auto; overflow: visible; }
+.mp-gold-svg text { font: var(--text-caption); fill: var(--text-3); }
+.mp-gold-svg text.mp-g-lbl { fill: var(--text-1); }
+.mp-g-grid { stroke: var(--line-subtle); stroke-width: 1; }
+.mp-g-zero { stroke: var(--line-strong); stroke-width: 1; }
+.mp-g-area-pos { fill: var(--win-tint); }
+.mp-g-area-neg { fill: var(--loss-tint); }
+.mp-g-pos, .mp-g-neg { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.mp-g-pos { stroke: var(--ally); }
+.mp-g-neg { stroke: var(--enemy); }
+.mp-g-dot-pos { fill: var(--ally); }
+.mp-g-dot-neg { fill: var(--enemy); }
+.mp-share-list { display: flex; flex-direction: column; gap: var(--sp-1); }
+.mp-share-row { display: grid; grid-template-columns: 28px 72px minmax(0, 1fr) 40px 44px; align-items: center; gap: var(--sp-2); height: 32px; font: var(--text-caption); color: var(--text-1); }
+.mp-share-row .mp-bar { height: 6px; }
+.mp-pc { text-align: right; font: var(--text-body-strong); font-weight: var(--weight-heavy); }
+.mp-k { text-align: right; color: var(--text-3); }
+
+/* ---------- Highlights: the Matches view's panel, full width ---------- */
+.mp-highlights { flex: 1; min-height: 0; overflow: auto; padding: var(--sp-4) var(--gutter) var(--sp-6); }
+.mp-highlights .mv-panel { padding: 0; background: transparent; box-shadow: none; }

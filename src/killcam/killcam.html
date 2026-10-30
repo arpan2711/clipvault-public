@@ -1,0 +1,102 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; media-src file:">
+  <link rel="stylesheet" href="../renderer/css/tokens.css">
+  <style>
+    /* Transparent window: only the card is drawn (see overlay.html). */
+    :root { color-scheme: normal; }
+    html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; font-family: var(--font-ui); cursor: pointer; }
+    /* The window is the 16:9 picture (.screen) with a band under it for the hotkeys (KEYS_BAND in
+       main.js), so the keys never cover the video. */
+    .cam {
+      position: absolute; inset: 0;
+      opacity: 0; transform: translateY(8px);
+      transition: opacity var(--dur-2) var(--ease-in), transform var(--dur-2) var(--ease-in);
+    }
+    .cam.show { opacity: 1; transform: none; transition-timing-function: var(--ease-out); }
+    @media (prefers-reduced-motion: reduce) { .cam, .cam.show { transition-duration: 1ms; } }
+    .screen {
+      position: absolute; left: 0; top: 0; width: 100%; height: calc(100vw * 9 / 16); box-sizing: border-box;
+      border-radius: var(--r-lg); overflow: hidden;
+      background: var(--video-bg); border: 1px solid var(--edge-glass); box-shadow: var(--shadow-flyout);
+    }
+    video { width: 100%; height: 100%; object-fit: contain; display: block; transform-origin: 50% 50%; }
+    /* The hotkeys, under the picture: the shared modifiers once, then each key and what it does.
+       fitKeys() (killcam.js) makes it fit a narrow cam: .tight, then .short words, then .stack
+       (the modifiers on a row of their own). */
+    .keys {
+      position: absolute; left: 0; right: 0; top: calc(100vw * 9 / 16 + 6px); margin: 0 auto; width: max-content; max-width: calc(100% - 16px); box-sizing: border-box;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      padding: 4px 10px; border-radius: var(--r-full); white-space: nowrap; color: var(--text-2); font: var(--text-caption);
+      background: color-mix(in srgb, var(--bg-pad) 86%, transparent); box-shadow: inset 0 1px 0 var(--hi), 0 1px 3px var(--sh);
+    }
+    .keys:empty { display: none; }
+    .keys .k { display: inline-flex; align-items: center; gap: 5px; }
+    .keys.tight { gap: 7px; padding: 3px 8px; }
+    .keys.tight .k { gap: 4px; }
+    .keys .what-short, .keys.short .what-long { display: none; }
+    .keys.short .what-short { display: inline; }
+    .keys.stack { flex-wrap: wrap; row-gap: 3px; padding: 4px 10px; border-radius: var(--r-lg); }
+    .keys.stack .mods { flex-basis: 100%; text-align: center; }
+    .keys.tiny { gap: 5px; padding: 3px 6px; font-size: 11px; }
+    .keys.tiny .k { gap: 3px; }
+    .keys.tiny kbd { padding: 0 4px; font-size: 11px; }
+    kbd {
+      min-width: 1.6em; padding: 1px 6px; border-radius: var(--r-sm); text-align: center; color: var(--text-1);
+      font: var(--text-caption-strong, var(--text-caption)); font-family: inherit;
+      background: var(--bg-raised, rgba(255,255,255,0.08)); box-shadow: inset 0 -1px 0 var(--sh), inset 0 1px 0 var(--hi);
+    }
+    .keys .mods { color: var(--text-1); }
+    body.big .label, body.big .keys { zoom: 1.5; }
+    body.big .keys { top: calc((100vw * 9 / 16 + 6px) / 1.5); } /* zoom scales the offset too */
+    /* Move / resize (Move hotkey): an outline, a hint, Done and a corner grip. */
+    .edit { display: none; }
+    body.editing { cursor: move; }
+    body.editing .cam { opacity: 1; transform: none; }
+    body.editing .screen { outline: 2px dashed var(--accent, #5b8cff); outline-offset: -2px; }
+    body.editing .edit { display: block; }
+    .hint {
+      position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); margin: 0 auto; width: max-content; max-width: calc(100% - 24px);
+      box-sizing: border-box; padding: 8px 14px; border-radius: var(--r-lg);
+      color: var(--text-1); font: var(--text-body-strong); text-align: center; pointer-events: none;
+      background: color-mix(in srgb, var(--bg-pad) 88%, transparent); box-shadow: inset 0 1px 0 var(--hi), 0 1px 3px var(--sh);
+    }
+    .hint span { display: block; color: var(--text-2); font: var(--text-caption); margin-top: 2px; }
+    .done {
+      position: absolute; top: 10px; right: 10px; padding: 4px 14px; border: 0; border-radius: var(--r-full); cursor: pointer;
+      color: #fff; font: var(--text-body-strong); background: var(--accent, #5b8cff); box-shadow: 0 1px 3px var(--sh);
+    }
+    .grip {
+      position: absolute; right: 0; bottom: 0; width: 26px; height: 26px; cursor: nwse-resize;
+      background: linear-gradient(135deg, transparent 50%, var(--accent, #5b8cff) 50%); border-bottom-right-radius: var(--r-lg);
+    }
+    body.blank video { visibility: hidden; }
+    .label {
+      position: absolute; top: 10px; left: 10px; display: flex; align-items: center; gap: 8px;
+      padding: 4px 12px 4px 10px; border-radius: var(--r-full); color: var(--text-1); font: var(--text-body-strong);
+      background: color-mix(in srgb, var(--bg-pad) 90%, transparent); box-shadow: inset 0 1px 0 var(--hi), 0 1px 3px var(--sh);
+    }
+    .dot { width: 9px; height: 9px; border-radius: var(--r-full); background: var(--jewel-ruby); box-shadow: var(--glow-ruby); }
+    .bar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--vc-groove); }
+    .fill { height: 100%; width: 0; background: var(--vc-gloss); }
+  </style>
+</head>
+<body title="Click to close">
+  <div class="cam" id="cam">
+    <div class="screen">
+      <video id="video" muted playsinline></video>
+      <div class="label"><span class="dot"></span><span id="title">Death cam</span></div>
+      <div class="edit">
+        <div class="hint">Drag to move<span>Drag the corner to resize</span></div>
+        <button class="done" id="done" type="button">Done</button>
+        <div class="grip" id="grip"></div>
+      </div>
+      <div class="bar"><div class="fill" id="fill"></div></div>
+    </div>
+    <div class="keys" id="keys"></div>
+  </div>
+  <script src="killcam.js"></script>
+</body>
+</html>

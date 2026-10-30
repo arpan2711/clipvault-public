@@ -1,0 +1,301 @@
+/* Matches view (js/views/matches.js): one row per League match, its highlights, its menus.
+   Ported from the m1 mockups, re-skinned in quickRS's language (see css/tokens.css). Tokens only:
+   no colour literals, no font sizes or radii outside the ramp. Every class is mv- prefixed because
+   styles.css already uses .day, .chip, .seg, .cap, .dur, .tag, .kda and .empty for other things.
+   The view styles its own buttons and icons, so it looks the same before and after the old
+   styles.css is retired. The row adapts to the list's width (container queries on .mv-view): below
+   1140 px the secondary labels drop out (as in the m1 @1280 render), below 900 px the files line,
+   below 720 px the action labels (the window's minimum width gives a list of about 650 px). */
+
+.mv-view, .mv-head, .mv-menu { box-sizing: border-box; }
+.mv-view *, .mv-head *, .mv-menu * { box-sizing: inherit; }
+.mv-view { container: mv / inline-size; display: flex; flex-direction: column; gap: var(--sp-3); min-width: 0; }
+.mv-head { container: mv-head / inline-size; display: flex; flex-direction: column; gap: var(--sp-3); min-width: 0; margin-bottom: var(--sp-1); }
+
+.mv-view svg.i, .mv-head svg.i, .mv-menu svg.i {
+  width: var(--icon-sm); height: var(--icon-sm); flex: none; fill: none; stroke: currentColor;
+  stroke-width: var(--icon-stroke); stroke-linecap: round; stroke-linejoin: round;
+}
+.mv-view button:disabled, .mv-head button:disabled, .mv-menu button:disabled { cursor: default; }
+.mv-view img, .mv-menu img { display: block; }
+.mv-num { font-variant-numeric: tabular-nums; }
+.mv-grow { flex: 1; }
+
+/* ---------- Buttons: pads (styles.css .btn), flat icon keys ---------- */
+.mv-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); height: var(--control-h-sm);
+  padding: 0 var(--sp-3); border-radius: var(--r-sm); border: 0; background: var(--bg-pad); box-shadow: var(--shadow-pad);
+  color: var(--text-1); font: var(--text-button); white-space: nowrap;
+  transition: transform var(--dur-1) var(--ease-out), box-shadow var(--dur-1) var(--ease-out), background-color var(--dur-1) var(--ease-out);
+}
+.mv-btn svg.i { color: var(--text-2); }
+.mv-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-pad-hover); }
+.mv-btn:hover svg.i { color: var(--text-1); }
+.mv-btn:active { transform: translateY(1px); box-shadow: var(--shadow-pad-press); }
+.mv-btn.mv-subtle { background: transparent; box-shadow: none; color: var(--text-2); }
+.mv-btn.mv-subtle:hover { background: var(--bg-pad); box-shadow: var(--shadow-pad); color: var(--text-1); transform: none; }
+.mv-btn.mv-subtle:active { box-shadow: var(--shadow-pad-press); }
+.mv-btn.mv-xs { height: var(--control-h-xs); padding: 0 var(--sp-2); font: var(--text-caption); font-weight: var(--weight-strong); }
+.mv-btn:disabled, .mv-btn:disabled:hover { transform: none; background: var(--bg-well); box-shadow: var(--shadow-well); color: var(--text-disabled); }
+.mv-btn.mv-subtle:disabled, .mv-btn.mv-subtle:disabled:hover { background: transparent; box-shadow: none; }
+.mv-btn:disabled svg.i { color: var(--text-disabled); }
+.mv-btn[aria-pressed="true"] { background: var(--bg-pad); box-shadow: var(--shadow-pad); color: var(--text-1); font-weight: var(--weight-heavy); }
+.mv-btn[aria-pressed="true"]::before { content: ""; flex: none; width: 7px; height: 7px; border-radius: var(--r-full); background: var(--led); box-shadow: var(--glow-led); }
+.mv-icon-btn {
+  display: inline-grid; place-items: center; width: var(--control-h-sm); height: var(--control-h-sm); padding: 0;
+  border-radius: var(--r-sm); border: 0; background: transparent; color: var(--text-2);
+  transition: background-color var(--dur-1) var(--ease-out), box-shadow var(--dur-1) var(--ease-out), color var(--dur-1) var(--ease-out);
+}
+.mv-icon-btn:hover { background: var(--bg-pad); box-shadow: var(--shadow-pad); color: var(--text-1); }
+.mv-icon-btn:active { box-shadow: var(--shadow-pad-press); }
+.mv-view :focus-visible, .mv-head :focus-visible, .mv-menu :focus-visible {
+  outline: var(--focus-width) solid var(--focus-ring); outline-offset: var(--focus-offset);
+}
+
+/* ---------- Header: title, totals, Phase 1 filters ---------- */
+.mv-title-row { display: flex; align-items: baseline; gap: var(--sp-3); }
+.mv-title { margin: 0; font: var(--text-title); letter-spacing: var(--title-track); color: var(--text-1); }
+.mv-total { font: var(--text-caption); color: var(--text-3); }
+.mv-toolbar { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
+.mv-select { position: relative; display: inline-flex; align-items: center; }
+.mv-select select {
+  appearance: none; height: var(--control-h); padding: 0 var(--sp-8) 0 var(--sp-3); border-radius: var(--r-md);
+  border: 0; background: var(--bg-well); box-shadow: var(--shadow-well);
+  color: var(--text-1); font: var(--text-body); font-weight: var(--weight-semibold);
+}
+.mv-select select:hover { box-shadow: var(--shadow-well), inset 0 0 0 1px var(--line); }
+.mv-select select:focus-visible { outline: 0; box-shadow: var(--shadow-well), var(--shadow-focus-in); }
+.mv-select svg.mv-chev { position: absolute; right: var(--sp-2); pointer-events: none; color: var(--text-2); }
+.mv-select svg.mv-lead { position: absolute; left: var(--sp-3); pointer-events: none; color: var(--text-2); }
+.mv-select.mv-with-icon select { padding-left: calc(var(--sp-3) + var(--icon-sm) + var(--sp-2)); }
+.mv-search {
+  display: inline-flex; align-items: center; gap: var(--sp-2); width: 240px; height: var(--control-h); padding: 0 var(--sp-3);
+  border-radius: var(--r-md); border: 0; background: var(--bg-well); box-shadow: var(--shadow-well); color: var(--text-3);
+  transition: box-shadow var(--dur-2) var(--ease-standard);
+}
+.mv-search:focus-within { box-shadow: var(--shadow-well), var(--shadow-focus-in); }
+.mv-search input { flex: 1; min-width: 0; height: 100%; padding: 0; border: 0; outline: none; background: transparent; color: var(--text-1); font: var(--text-body); font-weight: var(--weight-semibold); }
+.mv-search input::placeholder { color: var(--text-3); font-weight: var(--weight-regular); }
+.mv-search input::-webkit-search-cancel-button { display: none; }
+@container mv-head (max-width: 1139px) { .mv-search { width: 200px; } }
+
+/* Segmented control: the mode filter and the expanded match's family chips. A rubber track; the
+   chosen option is a pad with a lit LED and a heavier label. */
+.mv-seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: var(--r-md); background: var(--bg-well); box-shadow: var(--shadow-well); }
+.mv-chip {
+  display: inline-flex; align-items: center; gap: var(--sp-1); height: 26px; padding: 0 var(--sp-3);
+  border: 0; border-radius: var(--r-sm); background: transparent; color: var(--text-3); font: var(--text-button); font-weight: var(--weight-semibold); white-space: nowrap;
+  transition: color var(--dur-1) var(--ease-out);
+}
+.mv-chip:hover { color: var(--text-1); }
+.mv-chip.mv-on { gap: 6px; background: var(--bg-pad); box-shadow: var(--shadow-pad); color: var(--text-1); font-weight: var(--weight-heavy); }
+.mv-chip.mv-on::before { content: ""; flex: none; width: 7px; height: 7px; margin-right: 1px; border-radius: var(--r-full); background: var(--led); box-shadow: var(--glow-led); }
+.mv-chip .mv-ev { margin-right: var(--sp-0-5); }
+.mv-ct { color: var(--text-3); font-weight: var(--weight-strong); }
+.mv-chip.mv-on .mv-ct { color: var(--text-2); }
+
+/* ---------- Day groups ---------- */
+.mv-day { display: flex; align-items: baseline; gap: var(--sp-2); margin-top: var(--sp-3); }
+.mv-day:first-child { margin-top: 0; }
+.mv-day-title { margin: 0; font: var(--text-label); letter-spacing: var(--label-track); text-transform: uppercase; color: var(--text-2); }
+.mv-day-meta { font: var(--text-caption); color: var(--text-3); }
+.mv-list { display: flex; flex-direction: column; }
+
+/* ---------- Match row: tinted result cell + performance line + media line ---------- */
+.mv-row {
+  position: relative; display: grid; grid-template-columns: 132px minmax(0, 1fr); grid-template-rows: auto auto;
+  column-gap: var(--sp-4); padding: var(--sp-1) var(--sp-3) var(--sp-1) 0; border-radius: var(--r-md);
+  content-visibility: auto; contain-intrinsic-size: auto 116px;
+}
+.mv-row::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--line-subtle); }
+.mv-row { cursor: pointer; transition: background-color var(--dur-1) var(--ease-out); }
+.mv-row:hover { background: color-mix(in srgb, var(--bg-pad) 65%, transparent); }
+.mv-row.mv-open, .mv-row.mv-open:hover { background: var(--bg-pad); border-radius: var(--r-md) var(--r-md) 0 0; box-shadow: 0 -1px 0 var(--hi), 0 -1px 3px var(--sh); }
+.mv-row.mv-open::after { display: none; }
+.mv-row:focus-visible { outline-offset: calc(-1 * var(--focus-width)); }
+
+.mv-res {
+  grid-row: 1 / span 2; display: flex; flex-direction: column; gap: var(--sp-0-5); min-width: 0;
+  padding: var(--sp-3); border-radius: var(--r-md); background: var(--bg-well); box-shadow: var(--shadow-well);
+}
+.mv-res.mv-win { background: var(--win-tint); }
+.mv-res.mv-loss { background: var(--loss-tint); }
+.mv-r { font: var(--text-body-strong); color: var(--text-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mv-res.mv-win .mv-r { color: var(--c-victory); }
+.mv-res.mv-loss .mv-r { color: var(--c-defeat-text); }
+.mv-q { font: var(--text-caption); color: var(--text-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mv-m { font: var(--text-caption); color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mv-m.mv-num { font-variant-numeric: tabular-nums; }
+.mv-inferred { margin-top: var(--sp-1); color: var(--text-3); }
+
+/* One grid area per stat, so a stat a row doesn't have leaves its column empty and the rest stay
+   in line. The list root says which columns any row has (mv-has-cs, -dmg, -gold, -vision); the
+   others are 0 wide. Each track carries its own trailing gap, so an empty one costs nothing. */
+.mv-perf {
+  --mv-gap: var(--sp-4);
+  --mv-w-cz: 92px; --mv-w-cs: 0px; --mv-w-dmg: 0px; --mv-w-gold: 0px; --mv-w-vision: 0px;
+  display: grid; align-items: center; min-width: 0; padding-top: var(--sp-2);
+  grid-template-columns: calc(var(--mv-w-cz) + var(--mv-gap)) calc(104px + var(--mv-gap)) var(--mv-w-cs) var(--mv-w-dmg) var(--mv-w-gold) var(--mv-w-vision) auto minmax(0, 1fr);
+  grid-template-areas: "cz kda cs dmg gold vision items end";
+}
+@container mv (min-width: 1140px) { .mv-perf { --mv-gap: var(--sp-6); } }
+.mv-has-build .mv-perf { --mv-w-cz: 100px; }
+.mv-has-cs .mv-perf { --mv-w-cs: calc(72px + var(--mv-gap)); }
+.mv-has-dmg .mv-perf { --mv-w-dmg: calc(96px + var(--mv-gap)); }
+.mv-has-gold .mv-perf { --mv-w-gold: calc(88px + var(--mv-gap)); }
+.mv-has-vision .mv-perf { --mv-w-vision: calc(40px + var(--mv-gap)); }
+.mv-cz { grid-area: cz; display: flex; align-items: center; gap: var(--sp-2); }
+.mv-c-kda { grid-area: kda; }
+.mv-c-cs { grid-area: cs; }
+.mv-c-dmg { grid-area: dmg; }
+.mv-c-gold { grid-area: gold; }
+.mv-c-vision { grid-area: vision; }
+.mv-items { grid-area: items; display: flex; gap: var(--sp-0-5); margin-right: var(--mv-gap); }
+.mv-end { grid-area: end; justify-self: end; display: flex; align-items: center; gap: var(--sp-0-5); }
+/* Narrow lists: below 900 px the items go (the match page has them), below 800 px CS and vision,
+   so the stats never run under the row's menu and expand buttons. */
+@container mv (max-width: 899px) {
+  .mv-perf { --mv-gap: var(--sp-3); }
+  .mv-items { display: none; }
+}
+@container mv (max-width: 799px) {
+  .mv-has-cs .mv-perf, .mv-has-vision .mv-perf { --mv-w-cs: 0px; --mv-w-vision: 0px; }
+  .mv-st.mv-c-cs, .mv-st.mv-c-vision { display: none; }
+}
+
+.mv-st { display: flex; flex-direction: column; gap: var(--sp-0-5); min-width: 0; white-space: nowrap; }
+.mv-v { display: flex; align-items: center; gap: var(--sp-2); font: var(--text-stat-md); font-variant-numeric: tabular-nums; color: var(--text-1); }
+.mv-l { font: var(--text-caption); font-weight: var(--weight-regular); color: var(--text-3); overflow: hidden; text-overflow: ellipsis; }
+.mv-kda .mv-sep { color: var(--text-3); padding: 0 1px; }
+.mv-kda .mv-d { color: var(--c-death); }
+.mv-name { font: var(--text-body-strong); color: var(--text-1); overflow: hidden; text-overflow: ellipsis; }
+.mv-bar { width: 40px; height: 6px; flex: none; padding: 1px; border-radius: var(--r-full); background: var(--bg-well); box-shadow: var(--shadow-well); overflow: hidden; }
+.mv-bar > i { display: block; height: 100%; border-radius: var(--r-full); background: var(--text-2); }
+.mv-item { width: 22px; height: 22px; flex: none; border-radius: var(--r-xs); overflow: hidden; background: var(--bg-well); box-shadow: var(--shadow-well); }
+.mv-item img { width: 100%; height: 100%; }
+
+/* Summoner spells over runes (keystone, secondary tree): a 2×2 block beside a champion face, here
+   and on the match page (views/matches.js buildHtml). An icon not cached yet is an empty square. */
+.mv-build, .mp-build { --gi: 20px; display: inline-grid; grid-template-columns: repeat(2, var(--gi)); grid-auto-rows: var(--gi); gap: var(--sp-0-5); flex: none; }
+.gi { display: block; overflow: hidden; border-radius: var(--r-xs); background: var(--bg-well); line-height: 0; }
+.gi img { display: block; width: 100%; height: 100%; }
+.gi-key, .gi-tree { border-radius: var(--r-full); }
+.gi-tree img { box-sizing: border-box; padding: 15%; }
+
+/* Champion portrait: Data Dragon squares, cropped to a circle (the scale hides their frame). */
+.mv-champ-wrap { position: relative; display: inline-block; flex: none; line-height: 0; }
+.mv-champ { position: relative; display: inline-block; width: 48px; height: 48px; border-radius: var(--r-full); overflow: hidden; background: var(--bg-well); box-shadow: 0 0 0 2px var(--bg-layer), 0 0 0 3px var(--line); }
+.mv-champ img { width: 100%; height: 100%; transform: scale(1.12); }
+.mv-champ-ph { display: inline-grid; place-items: center; font: var(--text-subtitle); color: var(--text-2); line-height: 1; }
+.mv-lvl {
+  position: absolute; right: -2px; bottom: -2px; min-width: 18px; height: 18px; padding: 0 var(--sp-1);
+  border-radius: var(--r-full); border: 0; background: var(--bg-screen); box-shadow: 0 0 0 1.5px var(--bg-layer), var(--shadow-well);
+  font: var(--text-stat-sm); line-height: 18px; text-align: center; color: var(--text-1);
+}
+
+/* Media line: highlight strip, files on disk, actions */
+.mv-media { --mv-thumb-w: 64px; grid-column: 2; display: flex; align-items: center; gap: var(--sp-4); padding: var(--sp-2) 0; min-width: 0; }
+.mv-strip { display: flex; gap: var(--sp-1); flex: none; }
+.mv-sthumb {
+  position: relative; width: var(--mv-thumb-w); aspect-ratio: 16 / 9; flex: none; padding: 0; border: 0; border-radius: var(--r-sm);
+  overflow: hidden; background: var(--bg-well); box-shadow: var(--shadow-art);
+}
+.mv-sthumb img { width: 100%; height: 100%; object-fit: cover; }
+.mv-sthumb:hover::after { content: ""; position: absolute; inset: 0; border-radius: var(--r-sm); box-shadow: inset 0 0 0 1px var(--line-strong); }
+.mv-more {
+  width: 40px; align-self: stretch; flex: none; display: grid; place-items: center; padding: 0; border: 0; border-radius: var(--r-sm);
+  background: var(--bg-pad); box-shadow: var(--shadow-pad); color: var(--text-2); font: var(--text-stat-sm);
+}
+.mv-more:hover { box-shadow: var(--shadow-pad-hover); color: var(--text-1); }
+.mv-files { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: var(--text-caption); color: var(--text-3); }
+.mv-files b { font-weight: var(--weight-strong); color: var(--text-2); }
+.mv-dot { margin: 0 var(--sp-2); color: var(--text-disabled); }
+.mv-acts { margin-left: auto; display: flex; gap: var(--sp-1); flex: none; }
+.mv-lbl-s { display: none; }
+@container mv (max-width: 1139px) {
+  .mv-media { --mv-thumb-w: 56px; }
+  .mv-part.mv-wide, .mv-len, .mv-lbl-l { display: none; }
+  .mv-lbl-s { display: inline; }
+}
+@container mv (max-width: 899px) {
+  .mv-media { --mv-thumb-w: 48px; }
+  .mv-files { display: none; }
+}
+@container mv (max-width: 719px) {
+  .mv-acts .mv-lbl { display: none; }
+  .mv-acts .mv-btn { width: var(--control-h-sm); padding: 0; }
+}
+
+/* Event token: a forged plate from event-icons.svg (events.js glyphId); the tone classes stay for
+   anything that wants the family colour. */
+.mv-ev { width: 20px; height: 20px; flex: none; display: inline-block; vertical-align: middle; } /* block, not grid: the svg's 100% height needs a definite box */
+.mv-ev svg.ev { width: 100%; height: 100%; }
+.mv-ev.mv-sm { width: 18px; height: 18px; }
+.mv-evs { position: absolute; left: var(--sp-1); top: var(--sp-1); display: flex; gap: var(--sp-0-5); }
+.mv-sthumb .mv-evs { top: auto; bottom: var(--sp-1); }
+
+/* ---------- Expanded match: every highlight as a tile ---------- */
+.mv-panel {
+  display: flex; flex-direction: column; gap: var(--sp-3); margin-bottom: var(--sp-2); padding: var(--sp-2) var(--sp-4) var(--sp-4);
+  border-radius: 0 0 var(--r-md) var(--r-md); background: var(--bg-pad); box-shadow: var(--shadow-pad);
+}
+.mv-panel-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); min-width: 0; }
+.mv-tiles { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: var(--sp-3) var(--sp-2); }
+@container mv (max-width: 899px) { .mv-tiles { grid-template-columns: repeat(8, minmax(0, 1fr)); } }
+@container mv (max-width: 719px) { .mv-tiles { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+@container mv (max-width: 559px) { .mv-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.mv-tile {
+  position: relative; display: flex; flex-direction: column; gap: var(--sp-1); min-width: 0; padding: 0; border: 0;
+  border-radius: var(--r-sm); background: transparent; color: inherit; font: inherit; text-align: left;
+}
+.mv-thumb { position: relative; display: block; aspect-ratio: 16 / 9; border-radius: var(--r-sm); overflow: hidden; background: var(--bg-well); box-shadow: var(--shadow-art); transition: transform var(--dur-1) var(--ease-out); }
+.mv-tile:hover .mv-thumb { transform: translateY(-1px); }
+.mv-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.mv-tile:hover .mv-thumb::after { content: ""; position: absolute; inset: 0; border-radius: var(--r-sm); box-shadow: inset 0 0 0 1px var(--line-strong); }
+.mv-tile.mv-target .mv-thumb { outline: 2px solid var(--accent-text); outline-offset: 2px; }
+.mv-tile.mv-selected .mv-thumb { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mv-tile:focus-visible { outline-offset: var(--focus-offset); }
+.mv-cap { display: block; font: var(--text-caption); }
+.mv-lb { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-1); }
+.mv-tm { display: flex; justify-content: space-between; gap: var(--sp-1); color: var(--text-3); }
+.mv-view svg.mv-fav { width: 12px; height: 12px; margin-right: var(--sp-1); vertical-align: -1px; fill: currentColor; color: var(--text-2); }
+.mv-tag {
+  position: absolute; right: var(--sp-1); top: var(--sp-1); height: 18px; padding: 0 var(--sp-1); border-radius: var(--r-xs);
+  background: var(--scrim-badge); color: var(--on-scrim); font: var(--text-caption); font-weight: var(--weight-strong); line-height: 18px;
+}
+.mv-check {
+  position: absolute; right: var(--sp-1); top: var(--sp-1); width: 18px; height: 18px; display: grid; place-items: center;
+  border-radius: var(--r-xs); border: 2px solid var(--on-scrim); background: var(--scrim-badge); color: var(--on-accent);
+}
+.mv-check.mv-on { background: var(--face-accent); border-color: var(--accent-hi); }
+.mv-check svg.i { width: 12px; height: 12px; stroke-width: 2px; }
+.mv-sub { font: var(--text-label); letter-spacing: var(--label-track); text-transform: uppercase; color: var(--text-3); }
+.mv-foot { display: flex; align-items: center; gap: var(--sp-2); font: var(--text-caption); color: var(--text-3); }
+.mv-foot > svg.i { color: var(--text-3); }
+.mv-foot b { font-weight: var(--weight-strong); color: var(--text-1); }
+
+/* ---------- Empty and filter-empty ---------- */
+.mv-empty { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-2); max-width: 560px; padding: var(--sp-6) 0; }
+.mv-empty-title { margin: 0; font: var(--text-subtitle); font-weight: var(--weight-heavy); color: var(--text-1); }
+.mv-empty-text { margin: 0 0 var(--sp-2); font: var(--text-body); color: var(--text-2); }
+
+/* ---------- Context menus (placed by script; see placeMenu) ---------- */
+.mv-menu {
+  display: flex; flex-direction: column; min-width: 220px; width: max-content; max-width: 360px; padding: var(--sp-1);
+  border-radius: var(--r-md); border: 1px solid var(--edge-glass); background: var(--bg-glass); -webkit-backdrop-filter: var(--blur-glass); backdrop-filter: var(--blur-glass);
+  box-shadow: var(--shadow-flyout); font: var(--text-body); color: var(--text-1);
+}
+.mv-menu-item {
+  display: flex; align-items: center; gap: var(--sp-3); width: 100%; height: var(--row-h); padding: 0 var(--sp-3);
+  border: 0; border-radius: var(--r-sm); background: transparent; color: var(--text-1); font: var(--text-body);
+  text-align: left; white-space: nowrap;
+}
+.mv-menu-item svg.i { color: var(--text-2); }
+.mv-menu-item:hover, .mv-menu-item:focus-visible { background: var(--bg-pad); box-shadow: var(--shadow-pad); }
+.mv-menu-item:focus-visible { outline-offset: calc(-1 * var(--focus-width)); }
+.mv-menu-item:disabled, .mv-menu-item:disabled:hover { background: transparent; color: var(--text-disabled); }
+.mv-menu-item:disabled svg.i { color: var(--text-disabled); }
+.mv-mi-text { flex: 1; }
+.mv-sc { margin-left: var(--sp-6); font: var(--text-kbd); color: var(--text-3); }
+.mv-menu-item.mv-danger, .mv-menu-item.mv-danger svg.i { color: var(--danger); }
+.mv-menu-sep { height: 1px; margin: var(--sp-1) var(--sp-2); background: var(--line); }

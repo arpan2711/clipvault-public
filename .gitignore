@@ -1,0 +1,8 @@
+node_modules/
+bin/
+assets/icon.ico
+# redesign working notes, mockups, screenshots and log backups (local only; the backups hold other players names)
+docs/redesign/
+# release build output (npm run dist) and its generated icon
+dist/
+build/icon.ico

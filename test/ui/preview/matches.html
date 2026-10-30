@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ClipVault · Matches (preview)</title>
+<!-- Preview of the Matches view outside the app: the real modules and CSS, fixture items shaped like
+     library.js _item(), grouped by groupLibrary. Render: node <scratchpad>/tools/render/render.js
+     test/ui/preview/matches.html <out.png> 1440 900. tokens.css is a copy of mockups/shared/tokens.css
+     until css/tokens.css lands in Phase 0. -->
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="../../../src/renderer/css/views/matches.css">
+<link rel="stylesheet" href="preview.css">
+</head>
+<body>
+<div class="pv-window">
+  <header class="pv-titlebar">
+    <div class="pv-app"><span class="pv-mark"></span><span>ClipVault</span></div>
+    <div class="pv-search" id="tbSearch">Search matches and clips</div>
+    <span class="pv-grow"></span>
+    <span class="pv-status"><span class="pv-dot"></span>Replay buffer on · last 40 s</span>
+  </header>
+  <aside class="pv-sidebar" id="nav"></aside>
+  <main class="pv-content"><div class="pv-page" id="page"></div></main>
+</div>
+<div class="pv-float" id="menu"></div>
+<script type="module">
+import { icon } from '../../../src/renderer/js/core/icons.js';
+import { groupLibrary } from '../../../src/renderer/js/lib/group.js';
+import { renderMatchHeader, renderMatchList, renderClipMenu, placeMenu, esc } from '../../../src/renderer/js/views/matches.js';
+import { NOW, REAL_KEY, libraryItems } from './matches-data.js';
+
+// icons.js points at icons.svg next to index.html; from here the sprite is three folders up.
+const sprite = (html) => html.replaceAll('href="icons.svg#', 'href="../../../src/renderer/icons.svg#');
+
+const items = libraryItems();
+const { matches, loose } = groupLibrary(items);
+const real = matches.find((m) => m.key === REAL_KEY);
+const target = real.clips.find((c) => c.momentType === 'multikill');
+
+const navItem = (glyph, text, count, on) => `<div class="pv-nav-item${on ? ' pv-on' : ''}">${icon(glyph, { size: 'md' })}<span>${esc(text)}</span>${count != null ? `<span class="pv-count">${count}</span>` : ''}</div>`;
+document.getElementById('nav').innerHTML = sprite(
+  navItem('swords', 'Matches', matches.length, true)
+  + navItem('film', 'Clips', loose.length)
+  + navItem('star', 'Favorites', items.filter((i) => i.favorite).length)
+  + '<div class="pv-section">Games</div>'
+  + navItem('gamepad-2', 'League of Legends', items.filter((i) => i.game === 'League of Legends').length)
+  + `<div class="pv-foot">${navItem('settings', 'Settings')}</div>`);
+document.getElementById('tbSearch').insertAdjacentHTML('afterbegin', sprite(icon('search')));
+
+document.getElementById('page').innerHTML = sprite(
+  renderMatchHeader({ matches, filter: {} })
+  + renderMatchList({ matches, expandedKey: REAL_KEY, filter: {}, now: NOW, family: 'all', target: target.path }));
+
+// The clip menu, as if the Double kill tile was right-clicked near its lower right.
+const thumb = [...document.querySelectorAll('.mv-tile')].find((el) => el.dataset.path === target.path).querySelector('.mv-thumb');
+const menu = document.getElementById('menu');
+menu.innerHTML = sprite(renderClipMenu(target, { match: real }));
+const r = thumb.getBoundingClientRect();
+const box = menu.firstElementChild.getBoundingClientRect();
+const at = placeMenu({ x: r.left + r.width * 0.72, y: r.top + r.height * 0.78, width: box.width, height: box.height, viewWidth: innerWidth, viewHeight: innerHeight });
+menu.style.left = `${at.left}px`;
+menu.style.top = `${at.top}px`;
+</script>
+</body>
+</html>

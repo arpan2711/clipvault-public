@@ -1,0 +1,91 @@
+{
+  "name": "clipvault",
+  "productName": "ClipVault",
+  "version": "1.0.0",
+  "description": "Ad-free game recorder for Windows: instant replay clips, full recordings and a clip library.",
+  "main": "src/main.js",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "postinstall": "node setup.js",
+    "setup": "node setup.js",
+    "start": "node launch.js",
+    "dist": "node scripts/build-release-icon.js && electron-builder --win nsis zip",
+    "dist:dir": "node scripts/build-release-icon.js && electron-builder --win --dir",
+    "test": "node test/css-lint.js && node test/library-test.js && node test/league-logs-test.js && node test/match-test.js && node test/match-wiring-test.js && node test/group-test.js && node test/titles-test.js && node test/matches-view-test.js && node test/match-view-test.js && node test/game-icons-test.js && node test/league-test.js && node test/edit-test.js && node test/virtual-test.js && node test/killcam-test.js && node test/killcam-timing-test.js && node test/killcam-page-test.js && node test/audio-scope-test.js && node test/hotkeys-test.js && node test/recovery-test.js && node test/update-test.js",
+    "test:css": "node test/css-lint.js",
+    "deploy": "node scripts/deploy.js",
+    "test:engine": "node test/engine-test.js",
+    "test:league": "node test/league-test.js",
+    "test:matches": "node test/match-test.js",
+    "test:wiring": "node test/match-wiring-test.js",
+    "test:library": "node test/library-test.js",
+    "test:edit": "node test/edit-test.js",
+    "test:icons": "node test/game-icons-test.js",
+    "test:virtual": "node test/virtual-test.js",
+    "test:killcam": "node test/killcam-test.js && node test/killcam-timing-test.js && node test/killcam-page-test.js && node test/audio-scope-test.js && node test/hotkeys-test.js",
+    "test:killcam-page": "node test/killcam-page-test.js",
+    "test:update": "node test/update-test.js",
+    "test:tracks": "node test/tracks-test.js",
+    "test:hevc": "node test/hevc-test.js",
+    "test:ptt": "node test/ptt-test.js",
+    "shot": "node test/ui/run-shot.js",
+    "shot:profile": "node test/ui/make-profile.js"
+  },
+  "devDependencies": {
+    "electron": "^44.9.0",
+    "electron-builder": "^26.18.0"
+  },
+  "author": "arpan2711",
+  "homepage": "https://github.com/arpan2711/clipvault-public",
+  "build": {
+    "appId": "com.clipvault.app",
+    "productName": "ClipVault",
+    "copyright": "Copyright (c) 2026 arpan2711",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "src/**/*",
+      "package.json",
+      "!**/*.md"
+    ],
+    "extraResources": [
+      {
+        "from": "bin",
+        "to": "bin",
+        "filter": [
+          "ffmpeg.exe",
+          "ffprobe.exe",
+          "cvhelper.exe"
+        ]
+      }
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        "nsis",
+        "zip"
+      ],
+      "icon": "build/icon.ico",
+      "artifactName": "${productName}-${version}-win-${arch}.${ext}",
+      "signAndEditExecutable": true
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowElevation": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "ClipVault",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false,
+      "include": "build/installer.nsh",
+      "artifactName": "${productName}-Setup-${version}.${ext}",
+      "uninstallDisplayName": "ClipVault"
+    },
+    "npmRebuild": false
+  }
+}
