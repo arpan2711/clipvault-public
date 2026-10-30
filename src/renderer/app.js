@@ -31,6 +31,9 @@ async function loadModules() {
     Object.assign(mod, { group, titles, matches });
     // The match page; without it, matches open in the player.
     mod.match = await import('./js/views/match.js').catch((err) => { console.error('could not load the match page:', err); return null; });
+    // The first-run setup; without it, the app just opens as usual.
+    mod.onboarding = await import('./js/views/onboarding.js').catch((err) => { console.error('could not load the setup:', err); return null; });
+    mod.onboardingLib = mod.onboarding ? await import('./js/lib/onboarding.js') : null;
   } catch (err) {
     console.error('could not load the view modules:', err);
   }
@@ -2993,6 +2996,36 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+// ------------------------------------------------------------------ first-run setup
+
+// The setup wizard (js/views/onboarding.js): on the first start (settings.onboarded missing) and
+// from Settings → Redo setup. It saves everything on Finish; Skip only marks it as seen.
+let setup = null;
+function openSetup({ step = 0, redo = false } = {}) {
+  if (!mod.onboarding || !state.status || setup) return setup;
+  leaveFullscreen();
+  if (!$('#dialog').hidden) { $('#dialog').hidden = true; $('#dialog').innerHTML = ''; }
+  const before = state.status.settings;
+  setup = mod.onboarding.openOnboarding({
+    api,
+    status: state.status,
+    step,
+    redo,
+    toast,
+    onDone: (next, { finished }) => {
+      setup = null;
+      if (!next) return;
+      state.status.settings = next;
+      renderTopbar();
+      renderSidebar();
+      if (state.view === 'settings') renderSettingsKeepScroll();
+      if (finished && next.saveDir !== before.saveDir) refreshLibrary();
+      if (finished) toast('Setup saved. Change anything in Settings', 'ok');
+    },
+  });
+  return setup;
+}
+
 // ------------------------------------------------------------------ settings
 
 function opt(value, label, current) {
@@ -3147,6 +3180,7 @@ function settingsSection(id, s) {
     case 'notifications':
       return group('', `
       ${row('On-screen notifications', 'Shows a small notification when a clip is saved, a match ends or capture stops. Errors show even when this is off.', toggle('overlay', v.overlay))}
+      ${row('During games', 'Off keeps your game clear: nothing pops up while a game runs, only errors', toggle('notifyInGame', v.notifyInGame))}
       ${row('Notification screen', 'Put notifications on a second screen to keep them off your game', `<select data-setting="notifyMonitor" data-kind="num">${opt(-1, 'Same screen as the game', v.notifyMonitor)}${s.displays.map((d) => opt(d.index, d.label, v.notifyMonitor)).join('')}</select>`)}
       ${row('Sounds', 'Plays a short sound when a clip or recording is saved', toggle('clipSound', v.clipSound))}`);
     case 'about':
@@ -3179,6 +3213,8 @@ function renderSettings() {
   $('#content').innerHTML = `<div class="settings">
     <nav class="set-nav" aria-label="Settings sections"><h1>Settings</h1>${nav}</nav>
     <div class="set-body">
+      ${mod.onboarding ? `<section class="redo-setup"><div class="lbl"><b>Setup</b><span>Go through the death cam, recording, notifications, save folder and quality again</span></div>
+        <button type="button" class="btn sm" data-act="redo-setup">Redo setup</button></section>` : ''}
       <header class="set-head"><h2>${esc(title)}</h2><span class="saved-pill" id="savedPill">Saved</span><span class="spacer"></span>${extra}</header>
       ${cur === 'general' ? '<p class="lead">Changes save automatically. Capture restarts by itself when a change needs it.</p>' : ''}
       ${settingsSection(cur, s)}
@@ -3403,6 +3439,7 @@ $('#content').addEventListener('click', async (e) => {
     if (btn) btn.focus({ preventScroll: true });
     return;
   }
+  if (act && act.dataset.act === 'redo-setup') { openSetup({ redo: true }); return; }
   if (act && act.dataset.act === 'free-space') { freeUpSpace(act); return; }
   if (act && act.dataset.act === 'move-killcam') { attempt(() => api.moveKillCam(), "Couldn't show the death cam"); return; }
   if (act && act.dataset.act === 'reset-killcam-spot') { attempt(() => api.resetKillCamSpot(), "Couldn't reset the death cam"); return; }
@@ -3583,6 +3620,9 @@ api.onOpenReel(async (mapFile) => {
 });
 // --view=player[-heat][-overlay][@<panel size px>]  (opens the newest video; used for demos/tests)
 api.onNavigate((view) => {
+  // --view=onboarding[@<step>]: the first-run setup at that step (screenshot tests)
+  const ob = /^onboarding(?:@(\d+))?$/.exec(view);
+  if (ob) { openSetup({ step: Number(ob[1] || 0) }); return; }
   // --view=matches | matches-expanded | match-menu | clips (screenshot tests)
   const mv = /^(matches|matches-expanded|match-menu|clips)$/.exec(view);
   if (mv) {
@@ -3628,4 +3668,7 @@ api.onNavigate((view) => {
   renderTopbar();
   renderSidebar();
   renderLibrary(true);
+  // First start (or settings from before the setup existed): the setup, once. In a window that
+  // starts hidden (--hidden, Start with Windows) it waits there until the window is opened.
+  if (mod.onboardingLib && !state.status.automated && mod.onboardingLib.needsOnboarding(state.status.settings)) openSetup();
 })();

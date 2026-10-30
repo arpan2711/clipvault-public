@@ -48,6 +48,10 @@ function defaults(videosDir) {
     clipSound: true,
     overlay: true,
     notifyMonitor: -1, // screen for on-screen notifications; -1 = the captured screen
+    notifyInGame: true, // on-screen notifications while a game runs (off: only errors show then)
+    // The first-run setup (onboarding wizard) last finished or skipped: 0 = never, so it shows when
+    // the main window opens. Older settings files have no value, so existing users see it once too.
+    onboarded: 0,
     checkUpdates: true, // ask GitHub Releases for a newer version on start and once a day (update.js)
     updateNotified: '', // the newest version a notification was shown for (one toast per version)
     // League of Legends auto clips (key moments read from Riot's Live Client Data API)
@@ -165,6 +169,8 @@ class Settings {
       separateTracks: Boolean(v.separateTracks),
       monitor: clamp(v.monitor, 0, 15, 0),
       notifyMonitor: clamp(v.notifyMonitor, -1, 15, -1),
+      notifyInGame: v.notifyInGame !== false,
+      onboarded: clamp(v.onboarded, 0, 1000, 0),
       systemVolume: clamp(v.systemVolume, 0, 200, 100),
       micVolume: clamp(v.micVolume, 0, 200, 100),
       drawMouse: Boolean(v.drawMouse),

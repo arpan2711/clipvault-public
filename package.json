@@ -1,7 +1,7 @@
 {
   "name": "clipvault",
   "productName": "ClipVault",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Ad-free game recorder for Windows: instant replay clips, full recordings and a clip library.",
   "main": "src/main.js",
   "private": true,
@@ -12,7 +12,7 @@
     "start": "node launch.js",
     "dist": "node scripts/build-release-icon.js && electron-builder --win nsis zip",
     "dist:dir": "node scripts/build-release-icon.js && electron-builder --win --dir",
-    "test": "node test/css-lint.js && node test/library-test.js && node test/league-logs-test.js && node test/match-test.js && node test/match-wiring-test.js && node test/group-test.js && node test/titles-test.js && node test/matches-view-test.js && node test/match-view-test.js && node test/game-icons-test.js && node test/league-test.js && node test/edit-test.js && node test/virtual-test.js && node test/killcam-test.js && node test/killcam-timing-test.js && node test/killcam-page-test.js && node test/audio-scope-test.js && node test/hotkeys-test.js && node test/recovery-test.js && node test/update-test.js",
+    "test": "node test/css-lint.js && node test/library-test.js && node test/league-logs-test.js && node test/match-test.js && node test/match-wiring-test.js && node test/group-test.js && node test/titles-test.js && node test/onboarding-test.js && node test/matches-view-test.js && node test/match-view-test.js && node test/game-icons-test.js && node test/league-test.js && node test/edit-test.js && node test/virtual-test.js && node test/killcam-test.js && node test/killcam-timing-test.js && node test/killcam-page-test.js && node test/audio-scope-test.js && node test/hotkeys-test.js && node test/recovery-test.js && node test/update-test.js",
     "test:css": "node test/css-lint.js",
     "deploy": "node scripts/deploy.js",
     "test:engine": "node test/engine-test.js",

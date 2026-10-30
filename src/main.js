@@ -200,6 +200,10 @@ function snapshot() {
     game: fg.current && !fg.current.isShell && !fg.current.isSelf ? fg.current.displayName : null,
     gameFullscreen: Boolean(fg.current && fg.current.isGame),
     league: leagueMatch ? { champion: leagueMatch.champion, clips: leagueMatch.clips, recording: leagueMatch.recording } : null,
+    defaultSaveDir: settings.defaults.saveDir, // the first-run setup offers it back after a Change…
+    // Test and screenshot runs (--screenshot, --view) don't open the first-run setup by themselves,
+    // unless --first-run asks for it (a test of the first start).
+    automated: Boolean((flag('screenshot') || flag('view')) && !flag('first-run')),
     settings: settings.get(),
     displays: displays().map(({ index, label }) => ({ index, label })),
     version: app.getVersion(),
@@ -219,12 +223,18 @@ function broadcast() {
 }
 
 let overlayTimer = null;
+// A game is running (a League match, or a fullscreen game in front): Settings → Notifications →
+// During games decides whether notifications show then.
+function inGame() {
+  return Boolean(leagueMatch || (fg && fg.current && fg.current.isGame));
+}
+
 // brief: a quick confirmation (each highlight during a match) that leaves sooner.
 function toast(text, kind = 'info', { sound, sticky, brief } = {}) {
   const focused = mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible() && mainWindow.isFocused();
   if (focused) {
     mainWindow.webContents.send('toast', { text, kind, sticky });
-  } else if (overlayWindow && !overlayWindow.isDestroyed() && (settings.values.overlay || kind === 'error')) {
+  } else if (overlayWindow && !overlayWindow.isDestroyed() && ((settings.values.overlay && (settings.values.notifyInGame || !inGame())) || kind === 'error')) {
     const all = displays();
     const s = settings.values;
     const other = s.notifyMonitor >= 0 && all[s.notifyMonitor] && s.notifyMonitor !== s.monitor;
@@ -1429,7 +1439,7 @@ async function bugFacts() {
       monitor: s.monitor, audio: s.systemAudio ? s.audioScope : 'off', mic: s.mic ? s.micMode : 'off', discord: s.discordAudio,
       separateTracks: s.separateTracks, storageLimitGB: s.storageLimitGB, keepHighlightFiles: s.keepHighlightFiles,
       league: L.enabled, recordMatch: L.recordMatch, recordMap: L.recordMap, killCam: L.killCam, trackInputs: L.trackInputs,
-      overlay: s.overlay, notifyMonitor: s.notifyMonitor,
+      overlay: s.overlay, notifyMonitor: s.notifyMonitor, notifyInGame: s.notifyInGame,
     },
   };
 }

@@ -1,0 +1,270 @@
+/* First-run setup (js/views/onboarding.js): a full-window wizard over the app. Its header is the
+   window's title bar (drag region, the right end clear for Windows' buttons), then the step with
+   its choices on the left and the close-up of the Settings row on the right, then Back / Next.
+   Tokens only (see css/tokens.css). */
+
+.ob {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  grid-template-rows: var(--titlebar-h) minmax(0, 1fr) auto;
+  background: var(--bg-layer);
+  color: var(--text-1);
+}
+
+/* ------------------------------------------------------------ header and progress */
+.ob-top {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  padding: 0 calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw) + 12px) 0 16px;
+  border-bottom: 1px solid var(--line-subtle);
+  background: var(--bg-base);
+  -webkit-app-region: drag;
+}
+.ob-top .brand { width: auto; flex: none; }
+.ob-top button { -webkit-app-region: no-drag; }
+.ob-progress { display: flex; align-items: center; gap: var(--sp-1); min-width: 0; margin: 0 auto; padding: 0; list-style: none; }
+.ob-progress li { display: flex; align-items: center; }
+.ob-progress li + li::before { content: ""; width: 18px; height: 2px; margin-right: var(--sp-1); border-radius: var(--r-full); background: var(--line); }
+.ob-progress button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 28px;
+  padding: 0 10px 0 8px;
+  border: 0;
+  border-radius: var(--r-full);
+  background: transparent;
+  color: var(--text-3);
+  font: var(--text-caption);
+  white-space: nowrap;
+}
+.ob-progress button:disabled { color: var(--text-disabled); cursor: default; }
+.ob-progress button:hover:not(:disabled) { color: var(--text-1); }
+.ob-progress button.now { background: var(--bg-pad); box-shadow: var(--shadow-pad); color: var(--text-1); font-weight: var(--weight-heavy); }
+.ob-dot { width: 8px; height: 8px; flex: none; border-radius: var(--r-full); background: var(--led-off); box-shadow: var(--shadow-well); }
+.ob-progress .past .ob-dot { background: var(--accent); box-shadow: none; }
+.ob-progress .now .ob-dot { background: var(--led); box-shadow: var(--glow-led); }
+/* Narrow windows: only the current step keeps its name. */
+@media (max-width: 1180px) {
+  .ob-progress button:not(.now) .ob-step-name { display: none; }
+  .ob-progress button:not(.now) { padding: 0 7px; }
+}
+
+/* ------------------------------------------------------------ the step */
+.ob-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 1fr);
+  gap: var(--sp-10);
+  width: 100%;
+  max-width: 1240px;
+  min-height: 0;
+  margin: 0 auto;
+  padding: 0 var(--sp-10);
+}
+.ob-main, .ob-side { min-height: 0; overflow-y: auto; padding: var(--sp-6) var(--sp-1) var(--sp-6); }
+.ob-side { display: flex; flex-direction: column; gap: var(--sp-5); }
+.ob-main h1 { margin: 0 0 var(--sp-2); font: var(--text-title); letter-spacing: var(--title-track); outline: 0; }
+.ob-count { margin: 0 0 var(--sp-2); }
+.ob-lead { margin: 0 0 var(--sp-5); color: var(--text-2); max-width: 600px; }
+.ob-small { margin: var(--sp-2) 0 0; color: var(--text-3); font: var(--text-caption); }
+.ob-warn { margin: var(--sp-2) 0 0; color: var(--warning); font: var(--text-caption); }
+
+/* Welcome: the text and the death cam side by side, centred in the window. */
+.ob-body.welcome { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); align-items: center; }
+.ob-body.welcome .ob-main, .ob-body.welcome .ob-side { max-height: 100%; }
+.ob-hero-title { font: var(--text-title-lg) !important; }
+.ob-points { display: flex; flex-direction: column; gap: var(--sp-3); margin: 0 0 var(--sp-5); padding: 0; list-style: none; }
+.ob-points li { display: flex; flex-direction: column; gap: 2px; padding-left: var(--sp-4); border-left: 2px solid var(--accent); }
+.ob-points b { font: var(--text-body-strong); }
+.ob-points span { color: var(--text-2); font: var(--text-caption); }
+.ob-hero { margin: 0; }
+.ob-hero img { display: block; width: 100%; height: auto; border-radius: var(--r-lg); box-shadow: var(--shadow-dialog); }
+.ob-hero figcaption { margin-top: var(--sp-3); color: var(--text-3); font: var(--text-caption); text-align: center; }
+
+/* ------------------------------------------------------------ controls */
+.ob-field { min-width: 0; margin: var(--sp-5) 0 0; padding: 0; border: 0; }
+.ob-field legend { margin-bottom: var(--sp-2); padding: 0; font: var(--text-label); letter-spacing: var(--label-track); text-transform: uppercase; color: var(--text-3); }
+.ob-field:disabled { opacity: 0.45; }
+.ob-field:disabled * { cursor: default; }
+.ob-field select, .ob-folder select { min-width: 260px; }
+
+.ob-switch-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  margin-top: var(--sp-2);
+  padding: 10px var(--sp-4);
+  border-radius: var(--r-md);
+  background: var(--bg-pad);
+  box-shadow: var(--shadow-pad);
+  cursor: pointer;
+}
+.ob-switch-row.disabled { opacity: 0.45; cursor: default; }
+.ob-switch-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ob-switch-text b { font: var(--text-body-strong); }
+.ob-switch-text span { color: var(--text-3); font: var(--text-caption); }
+.ob-field > .ob-switch-row:first-of-type { margin-top: 0; }
+
+.ob-cards { display: grid; gap: var(--sp-2); }
+.ob-cards.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ob-cards.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.ob-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-md);
+  background: var(--bg-pad);
+  box-shadow: var(--shadow-pad);
+  cursor: pointer;
+  transition: box-shadow var(--dur-1) var(--ease-out), background-color var(--dur-1) var(--ease-out);
+}
+.ob-card:hover { box-shadow: var(--shadow-pad-hover); }
+.ob-card:has(input:checked) { background: var(--bg-selected); box-shadow: var(--shadow-pad), inset 0 0 0 1.5px var(--accent-text); }
+.ob-card:has(input:focus-visible) { outline: var(--focus-width) solid var(--focus-ring); outline-offset: var(--focus-offset); }
+.ob-card.disabled { opacity: 0.45; cursor: default; }
+.ob-card input[type="radio"] {
+  flex: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin: 2px 0 0;
+  border-radius: var(--r-full);
+  background: var(--bg-well);
+  box-shadow: var(--shadow-well);
+  outline: 0;
+}
+.ob-card input[type="radio"]:checked { background: var(--led); box-shadow: var(--glow-led); }
+.ob-card-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ob-card-body b { display: flex; flex-wrap: wrap; align-items: center; gap: 2px var(--sp-2); font: var(--text-body-strong); }
+.ob-card-body b span { color: var(--text-1); font: inherit; }
+.ob-card-body span { color: var(--text-3); font: var(--text-caption); }
+.ob-card-body i { display: block; margin-bottom: 2px; color: var(--text-2); font-style: normal; font-weight: var(--weight-strong); }
+.ob-badge {
+  display: inline-block;
+  padding: 0 7px;
+  border-radius: var(--r-full);
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font: var(--text-caption);
+  font-style: normal;
+  vertical-align: 1px;
+}
+
+.ob-inline { display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-3); margin-top: var(--sp-4); }
+.ob-inline-label { color: var(--text-2); font-weight: var(--weight-semibold); }
+
+/* Death cam: a little screen with the cam in its corner, at its size; click a corner to pick it. */
+.ob-place-row { display: flex; align-items: flex-start; gap: var(--sp-5); }
+.ob-place-ctl { flex: 1; min-width: 0; }
+.ob-place-ctl .ob-small { margin: var(--sp-2) 0 var(--sp-3); }
+.ob-sizes { flex-wrap: wrap; }
+.ob-screen {
+  position: relative;
+  flex: none;
+  width: 208px;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--r-sm);
+  background: var(--bg-stage);
+  box-shadow: var(--shadow-well), inset 0 0 0 1px var(--line);
+}
+.ob-screen-name { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); color: var(--text-3); font: var(--text-caption); text-align: center; pointer-events: none; }
+.ob-cam {
+  position: absolute;
+  width: var(--cam-w);
+  aspect-ratio: 16 / 9;
+  border-radius: 3px;
+  background: var(--bg-pad) url("../../onboarding/hero-deathcam.webp") center / cover;
+  box-shadow: 0 0 0 1.5px var(--accent-text), 0 2px 6px var(--sh-deep);
+  transition: width var(--dur-2) var(--ease-out);
+}
+.ob-cam-top-left, .ob-cam-top-right { top: 6%; }
+.ob-cam-bottom-left, .ob-cam-bottom-right { bottom: 6%; }
+.ob-cam-top-left, .ob-cam-bottom-left { left: 3.5%; }
+.ob-cam-top-right, .ob-cam-bottom-right { right: 3.5%; }
+.ob-cam.inset.ob-cam-top-left, .ob-cam.inset.ob-cam-bottom-left { left: 5%; }
+.ob-screen.off .ob-cam { opacity: 0.35; }
+/* The corners are buttons over the picture: a dashed outline where the cam would go. */
+.ob-corner {
+  position: absolute;
+  z-index: 1;
+  width: 34%;
+  height: 34%;
+  padding: 0;
+  border: 1.5px dashed transparent;
+  border-radius: var(--r-xs);
+  background: transparent;
+}
+.ob-corner:hover, .ob-corner:focus-visible { border-color: var(--accent-text); }
+.ob-corner.on { border-color: transparent; }
+.ob-screen:hover .ob-corner:not(.on) { border-color: var(--line-strong); }
+.ob-screen:hover .ob-corner:not(.on):hover { border-color: var(--accent-text); }
+.ob-corner-top-left { top: 4%; left: 3%; }
+.ob-corner-top-right { top: 4%; right: 3%; }
+.ob-corner-bottom-left { bottom: 4%; left: 3%; }
+.ob-corner-bottom-right { bottom: 4%; right: 3%; }
+
+.ob-folder { display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-2); }
+.ob-folder .path { flex: 1 1 260px; max-width: none; min-width: 0; font-size: 13px; line-height: 18px; padding: 9px 12px; color: var(--text-1); white-space: normal; overflow-wrap: anywhere; }
+
+/* Done: what was chosen and where it lives in Settings. */
+.ob-summary { margin: 0 0 var(--sp-4); padding: var(--sp-1) var(--sp-4); border-radius: var(--r-md); background: var(--bg-pad); box-shadow: var(--shadow-pad); }
+.ob-summary > div { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: var(--sp-3); padding: 7px 0; border-top: 1px solid var(--line-subtle); }
+.ob-summary > div:first-child { border-top: 0; }
+.ob-summary dt { color: var(--text-3); font: var(--text-caption); line-height: 20px; }
+.ob-summary dd { display: flex; flex-direction: column; gap: 1px; min-width: 0; margin: 0; }
+.ob-summary dd > span { min-width: 0; overflow-wrap: anywhere; font-weight: var(--weight-semibold); }
+.ob-summary dd small { color: var(--text-3); font: var(--text-caption); white-space: nowrap; }
+.ob-mono { font: 12px/20px var(--font-mono); color: var(--text-2); }
+.ob-keys .ob-crumb-text { margin-top: var(--sp-2); }
+.ob-keys { padding: var(--sp-4); border-radius: var(--r-md); background: var(--bg-pad); box-shadow: var(--shadow-pad); }
+.ob-keys h2 { margin: 0 0 var(--sp-2); }
+.ob-keys > div { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); padding: 5px 0; }
+.ob-keys > div span { color: var(--text-2); }
+
+/* ------------------------------------------------------------ the Settings close-ups */
+.ob-shot { margin: 0; }
+.ob-shot img { display: block; width: 100%; height: auto; border-radius: var(--r-md); box-shadow: var(--shadow-art), 0 0 0 1px var(--line); }
+.ob-shot figcaption, .ob-crumb-text { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px var(--sp-2); margin: var(--sp-2) 0 0; color: var(--text-3); font: var(--text-caption); }
+.ob-crumb-what { color: var(--text-3); }
+.ob-crumb-path { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-1); }
+.ob-crumb-path b { color: var(--text-2); font-weight: var(--weight-strong); }
+.ob-crumb-path span { color: var(--text-3); }
+
+/* ------------------------------------------------------------ footer */
+.ob-foot {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) max(var(--sp-10), calc((100vw - 1240px) / 2 + var(--sp-10)));
+  border-top: 1px solid var(--line-subtle);
+  background: var(--bg-base);
+}
+.ob-foot .spacer { flex: 1; }
+.ob-foot .btn.primary { min-width: 120px; justify-content: center; }
+
+/* Small windows (940 × 600 is the smallest): tighter spacing, the close-ups get less room. */
+@media (max-width: 1100px) {
+  .ob-body { grid-template-columns: minmax(0, 1fr) minmax(260px, 0.7fr); gap: var(--sp-6); padding: 0 var(--sp-6); }
+  .ob-foot { padding: var(--sp-3) var(--sp-6); }
+  .ob-cards.three .ob-card { gap: var(--sp-2); padding: 10px var(--sp-3); }
+}
+@media (max-height: 700px) {
+  .ob-main, .ob-side { padding-top: var(--sp-4); padding-bottom: var(--sp-4); }
+  .ob-lead { margin-bottom: var(--sp-4); }
+  .ob-field { margin-top: var(--sp-4); }
+  .ob-foot { padding-top: 10px; padding-bottom: 10px; }
+  .ob-main h1 { margin-bottom: var(--sp-1); }
+  .ob-switch-row { padding-top: var(--sp-2); padding-bottom: var(--sp-2); }
+  .ob-card { padding-top: 10px; padding-bottom: 10px; }
+  .ob-summary > div { padding: 5px 0; }
+}
+
+/* Settings: Redo setup, at the top of every section. */
+.redo-setup { display: flex; align-items: center; gap: var(--sp-4); margin: 0 0 var(--sp-5); padding: var(--sp-3) var(--sp-5); border-radius: var(--r-lg); background: var(--bg-pad); box-shadow: var(--shadow-pad); }
+.redo-setup .lbl { flex: 1; min-width: 0; }
+.redo-setup .lbl b { display: block; font: var(--text-body-strong); }
+.redo-setup .lbl span { display: block; color: var(--text-3); font: var(--text-caption); }
